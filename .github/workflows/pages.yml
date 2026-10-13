@@ -1,0 +1,62 @@
+name: Déploiement GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier la syntaxe JavaScript
+        run: for f in js/*.js; do node --check "$f"; done
+
+      - name: Vérifier le pack de contenu
+        run: |
+          node -e '
+            global.window = {};
+            require("./js/pack.js");
+            const p = window.BQ_PACK, erreurs = [];
+            p.quiz.forEach((q, i) => {
+              const l = q.ligne;
+              if (l.length !== 8) erreurs.push(`quiz ${i} : ${l.length} colonnes au lieu de 8`);
+              if (l.slice(0, 7).some((c) => !String(c).trim())) erreurs.push(`quiz ${i} : cellule vide (${l[2]})`);
+              if (new Set(l.slice(3, 7).map((c) => c.toLowerCase())).size !== 4) erreurs.push(`quiz ${i} : réponses en double (${l[2]})`);
+            });
+            p.fiches.forEach((f, i) => { if (f.length !== 4 || f.some((c) => !String(c).trim())) erreurs.push(`fiche ${i} incomplète`); });
+            if (erreurs.length) { console.error(erreurs.join("\n")); process.exit(1); }
+            console.log(`Pack OK : ${p.quiz.length} questions, ${p.fiches.length} points de fiches`);
+          '
+
+      - name: Préparer le site
+        run: |
+          mkdir _site
+          cp -r index.html css js _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

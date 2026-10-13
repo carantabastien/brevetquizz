@@ -30,5 +30,7 @@ App web de révision du brevet (3e) pour le fils de l'utilisateur. L'utilisateur
 - `python3 -m http.server` depuis le dossier du projet échoue dans la sandbox (pas d'accès à ~/Documents). Copier le site dans le scratchpad (`rsync -a --exclude .claude ./ <scratchpad>/site/`) et servir depuis là. `.claude/launch.json` (ignoré par git) pointe vers cette copie : relancer le rsync après chaque modification.
 - Pas de Node. `python3` et `git` sont disponibles depuis l'installation des Command Line Tools. `osascript -l JavaScript` peut servir à vérifier la syntaxe JS.
 
-## Repo
-- GitHub : https://github.com/carantabastien/brevetquizz (branche `main`). Pour le téléphone de l'élève, publication possible via GitHub Pages.
+## Repo et déploiement
+- GitHub : https://github.com/carantabastien/brevetquizz (branche `main`, remote en SSH avec la clé `~/.ssh/id_ed25519`).
+- CI `.github/workflows/pages.yml` : à chaque push sur `main`, `node --check` sur `js/*.js`, validation de `js/pack.js` (8 colonnes, pas de cellule vide, pas de réponses en double), puis déploiement de `index.html`, `css/` et `js/` sur GitHub Pages : https://carantabastien.github.io/brevetquizz/ (Source Pages = « GitHub Actions »).
+- Un fichier `a` (test de git de l'utilisateur) existe dans le repo : ne pas y toucher sans demander.

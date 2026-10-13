@@ -64,7 +64,8 @@ Copiez le tableau obtenu dans **Ajouter > Coller plusieurs lignes**.
 
 C'est un site statique (HTML, CSS, JS, sans installation ni compilation).
 - **Sur l'ordinateur** : double-cliquez sur `index.html`.
-- **Sur son téléphone** : publiez le repo avec GitHub Pages (Settings > Pages > Branch `main`), puis ouvrez l'adresse obtenue et utilisez « Ajouter à l'écran d'accueil ».
+- **Sur son téléphone** : l'app est publiée automatiquement sur **https://carantabastien.github.io/brevetquizz/** à chaque envoi sur `main` (workflow `.github/workflows/pages.yml`). Ouvrez l'adresse sur le téléphone puis utilisez « Ajouter à l'écran d'accueil ».
+  *Réglage à faire une seule fois : Settings > Pages > Source : **GitHub Actions**.*
 
 La progression (XP, badges, questions vues) est enregistrée dans le navigateur de l'appareil. Pour changer d'appareil, utilisez Réglages > Exporter / Importer.
 
@@ -77,4 +78,5 @@ js/config.js          identifiant du Google Sheet
 js/app.js             toute l'application
 js/pack.js            pack de contenu installable dans le Sheet
 apps-script/Code.gs   script Google pour écrire dans le Sheet
+.github/workflows/    CI : vérifie le JS et le pack, puis publie sur GitHub Pages
 ```
