@@ -72,6 +72,14 @@ function doPost(e) {
       }
       return json_({ ok: true, parent: parent, quiz: lire_(ss, 'Quiz'), fiches: lire_(ss, 'Fiches'), frise: lire_(ss, 'Frise') });
     }
+    // Classement visible par tous les invités : prénom, réussite et nombre de réponses uniquement (jamais les codes).
+    if (req.action === 'classement') {
+      if (!parent) {
+        const refus = verifierInvitation_(ss, req.code, req.appareil);
+        if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
+      }
+      return json_({ ok: true, classement: classement_(ss, parent ? '' : String(req.code)) });
+    }
     // Un invité envoie le résumé de sa progression et ses dernières parties (à la fin de chaque partie).
     if (req.action === 'resultat') {
       const refus = verifierInvitation_(ss, req.code, req.appareil);
@@ -195,6 +203,19 @@ function enregistrerResultat_(ss, code, r, parties) {
     const h = ss.getSheetByName('Historique');
     h.getRange(h.getLastRow() + 1, 1, lignes.length, 7).setNumberFormat('@').setValues(lignes);
   }
+}
+
+/** Élèves dont l'invitation est active, avec leur réussite. « moi » repère la ligne de l'élève qui demande. */
+function classement_(ss, moi) {
+  const actifs = {};
+  ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
+    if (l[A.code] && l[A.statut] === 'actif') actifs[l[A.code]] = l[A.nom];
+  });
+  return ss.getSheetByName('Résultats').getDataRange().getDisplayValues().slice(1)
+    .filter(function (l) { return l[0] && actifs.hasOwnProperty(l[0]); })
+    .map(function (l) {
+      return { nom: actifs[l[0]] || l[1], reussite: parseInt(l[8], 10) || 0, repondues: +l[7] || 0, parties: +l[6] || 0, moi: l[0] === moi };
+    });
 }
 
 function lireResultats_(ss) {

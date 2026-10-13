@@ -410,6 +410,7 @@
         <button data-go="frise"><span class="ico">⏳</span>Frise<span class="sub">${plural(D.frise.length, "date")}</span></button>
         <button data-action="erreurs" ${nbErr ? "" : "disabled"}><span class="ico">🩹</span>Mes erreurs<span class="sub">${nbErr ? plural(nbErr, "à revoir", "à revoir") : "Aucune 👌"}</span></button>
         <button data-go="badges"><span class="ico">🏅</span>Badges<span class="sub">${nbBadges} débloqué${nbBadges > 1 ? "s" : ""}</span></button>
+        ${scriptUrl() ? `<button data-go="classement" class="wide"><span class="ico" style="font-size:1.4rem">🏆</span> Classement</button>` : ""}
         ${scriptUrl() && P.cle ? `<button data-action="onglet" data-onglet="eleves" class="wide"><span class="ico" style="font-size:1.4rem">📈</span> Résultats des élèves</button>` : ""}
         <button data-go="parent" class="wide btn-ghost"><span>📊</span> Statistiques</button>
       </div>`;
@@ -531,6 +532,45 @@
           ${items.map((e) => `<div class="tl-item"><span class="tl-year">${e.annee}</span> — ${esc(e.evenement)}</div>`).join("")}
         </div></div>
         <button class="btn-primary btn-big" style="margin-top:16px" data-action="quiz" data-pool="#frise">🎯 Quiz des dates</button>`;
+    },
+
+    // Classement par taux de réussite, visible par tous les invités (prénom, % et nombre de réponses seulement).
+    classement: () => {
+      if (!vue.liste && !vue.chargeCl) {
+        vue.chargeCl = true;
+        synchroniser() // envoie d'abord le dernier score de l'élève
+          .then(() => envoyer({ action: "classement", code: ACCES.code || "", appareil: ACCES.appareil }))
+          .then((r) => { vue.liste = r.classement; render(); })
+          .catch((e) => { vue.liste = []; vue.erreurCl = e.message; render(); });
+      }
+      const MIN = 20;
+      const L = vue.liste;
+      const classes = (L || []).filter((x) => x.repondues >= MIN)
+        .sort((a, b) => b.reussite - a.reussite || b.repondues - a.repondues);
+      const attente = (L || []).filter((x) => x.repondues < MIN).sort((a, b) => b.repondues - a.repondues);
+      // Ex aequo : même réussite = même rang.
+      let rang = 0;
+      classes.forEach((x, i) => { rang = i && x.reussite === classes[i - 1].reussite ? rang : i + 1; x.rang = rang; });
+      const medaille = (r) => ["🥇", "🥈", "🥉"][r - 1] || `<span class="rang">${r}</span>`;
+      const moi = (L || []).find((x) => x.moi);
+      return `${retour()}<h1>🏆 Classement</h1>
+        <p class="small muted">Classement par taux de bonnes réponses. Il faut au moins ${MIN} réponses pour être classé. Mis à jour à la fin de chaque partie.</p>
+        ${!L ? `<div class="card"><p class="muted">Chargement du classement…</p></div>`
+        : vue.erreurCl ? `<div class="card"><div class="warn">${esc(vue.erreurCl)}</div></div>`
+        : `${moi && moi.rang ? `<div class="ok" style="margin-bottom:12px">Tu occupes la <strong>${moi.rang}${moi.rang === 1 ? "re" : "e"} place</strong>${classes.filter((x) => x.rang === moi.rang).length > 1 ? " (ex æquo)" : ""} sur ${classes.length}, avec ${moi.reussite} % de réussite${moi.rang === 1 ? " 👑" : ". Continue !"}</div>` : ""}
+          ${moi && !moi.rang ? `<div class="ok" style="margin-bottom:12px">Encore ${MIN - moi.repondues} réponse${MIN - moi.repondues > 1 ? "s" : ""} pour entrer dans le classement 💪</div>` : ""}
+          <div class="card">
+            ${classes.length ? classes.map((x) => `<div class="cl-row ${x.moi ? "cl-moi" : ""}">
+                <div class="cl-rang">${medaille(x.rang)}</div>
+                <div class="cl-nom"><strong>${esc(x.nom)}</strong>${x.moi ? ` <span class="tag">toi</span>` : ""}<div class="small muted">${x.repondues} réponses · ${x.parties} parties</div></div>
+                <div class="cl-val">${x.reussite} %</div>
+              </div>`).join("")
+            : `<p class="muted center">Personne n'est encore classé. Le premier à ${MIN} réponses prend la tête ! 🚀</p>`}
+          </div>
+          ${attente.length ? `<div class="card" style="margin-top:12px"><h3>Pas encore classés</h3>
+            ${attente.map((x) => `<div class="cl-row ${x.moi ? "cl-moi" : ""}"><div class="cl-rang">⏳</div>
+              <div class="cl-nom">${esc(x.nom)}${x.moi ? ` <span class="tag">toi</span>` : ""}<div class="small muted">${x.repondues}/${MIN} réponses</div></div></div>`).join("")}</div>` : ""}`}
+        <button class="btn-primary btn-big" style="margin-top:16px" data-go="choix">🎯 Jouer pour grimper</button>`;
     },
 
     badges: () => `${retour()}<h1>🏅 Badges</h1>
@@ -910,12 +950,12 @@
   // En cas d'échec (hors ligne…), les parties restent dans P.envois et repartent la fois suivante.
   let synchroEnCours = false;
   function synchroniser() {
-    if (!scriptUrl() || P.cle || !ACCES.code || synchroEnCours) return;
+    if (!scriptUrl() || P.cle || !ACCES.code || synchroEnCours) return Promise.resolve();
     const envoyees = (P.envois || []).length;
     const stats = Object.values(P.stats || {});
     const nv = niveau(P.xp);
     synchroEnCours = true;
-    envoyer({
+    return envoyer({
       action: "resultat", code: ACCES.code, appareil: ACCES.appareil, parties: (P.envois || []).slice(0, envoyees),
       resume: {
         prenom: P.prenom, xp: P.xp, niveau: nv.n + " · " + nv.nom, parties: P.quizFaits, repondues: P.repondues,

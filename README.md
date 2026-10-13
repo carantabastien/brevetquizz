@@ -69,6 +69,8 @@ Une fois l'URL du script inscrite dans `js/config.js` (`scriptUrl`), l'app passe
 
 **📈 Résultats des élèves** : à la fin de chaque partie, l'app d'un invité envoie un résumé dans les onglets **Résultats** et **Historique** du Sheet. Sur l'appareil du parent, le bouton « Résultats des élèves » de l'accueil (ou Statistiques > 📈 Élèves) affiche, pour chacun : sa réussite, son nombre de parties, sa série de jours, son niveau, les matières à retravailler, sa réussite par matière, son activité des 14 derniers jours et ses dernières parties. Hors connexion, les résultats sont gardés et envoyés à la connexion suivante.
 
+**🏆 Classement** (bouton de l'accueil, visible par tous les invités) : élèves classés par taux de bonnes réponses, à partir de 20 réponses. Un élève qui en a moins apparaît dans « Pas encore classés ». Chacun ne voit des autres que le prénom de l'invitation, le pourcentage et le nombre de réponses. Une invitation désactivée sort du classement.
+
 Pour que ce soit vraiment privé, passez le partage du Google Sheet en **« Accès restreint »**. Les questions ne sont alors plus lisibles que par le script.
 
 *Limites* : un invité peut toujours prêter son téléphone ou faire des captures d'écran. Le code de l'app et le pack de questions (`js/pack.js`) restent visibles sur GitHub, puisque le repo est public. Un invité hors ligne garde l'accès 7 jours au plus sans nouvelle vérification.

@@ -156,6 +156,15 @@ button:disabled { opacity: .5; cursor: default; }
 .axis14 { display: flex; gap: 2px; margin-top: 4px; }
 .axis14 > span { flex: 1; text-align: center; }
 
+/* Classement */
+.cl-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 12px; }
+.cl-row + .cl-row { border-top: 1px solid var(--line); }
+.cl-moi { background: var(--primary-soft); }
+.cl-rang { width: 36px; text-align: center; font-size: 1.5rem; flex: none; }
+.rang { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; background: var(--line); align-items: center; justify-content: center; font-size: .9rem; font-weight: 700; }
+.cl-nom { flex: 1; min-width: 0; }
+.cl-val { font-size: 1.25rem; font-weight: 800; }
+
 /* Badges */
 .badge { text-align: center; padding: 14px 8px; }
 .badge .ico { font-size: 2.2rem; }
