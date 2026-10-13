@@ -38,4 +38,6 @@ App web de révision du brevet (3e) pour le fils de l'utilisateur. L'utilisateur
 ## Repo et déploiement
 - GitHub : https://github.com/carantabastien/brevetquizz (branche `main`, remote en SSH avec la clé `~/.ssh/id_ed25519`).
 - CI `.github/workflows/pages.yml` : à chaque push sur `main`, `node --check` sur `js/*.js`, validation de `js/pack.js` (8 colonnes, pas de cellule vide, pas de réponses en double), puis déploiement de `index.html`, `css/` et `js/` sur GitHub Pages : https://carantabastien.github.io/brevetquizz/ (Source Pages = « GitHub Actions »).
+- Script Apps Script déployé le 13/10/2026, URL dans `js/config.js` : l'accès sur invitation est ACTIF en production. La clé secrète n'est connue que du parent : ne jamais la demander ni l'écrire dans le repo. Après une modification de `Code.gs`, le parent doit la recoller dans Apps Script puis faire Déployer > Gérer les déploiements > Nouvelle version, pour garder la même URL.
+- La CI ajoute `?v=<sha>` aux fichiers CSS et JS dans `index.html`, sinon GitHub Pages les garde 10 min en cache.
 - Un fichier `a` (test de git de l'utilisateur) existe dans le repo : ne pas y toucher sans demander.
