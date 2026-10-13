@@ -44,6 +44,10 @@ jobs:
         run: |
           mkdir _site
           cp -r index.html css js _site/
+          # Numéro de version sur les fichiers : les navigateurs prennent la nouvelle version tout de suite
+          V=$(echo "$GITHUB_SHA" | cut -c1-8)
+          sed -i -E "s#(href|src)=\"(css/[^\"]+|js/[^\"]+)\"#\1=\"\2?v=$V\"#g" _site/index.html
+          grep -E 'v=' _site/index.html
 
       - uses: actions/configure-pages@v5
 
