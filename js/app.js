@@ -90,6 +90,29 @@
   }
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(P)); } catch (e) { /* stockage indisponible */ } }
   const scriptUrl = () => P.scriptUrl || CONFIG.scriptUrl || "";
+  // Mode privé = le script est configuré : les questions passent par lui et ne sont données qu'aux invités.
+  // Le parent (clé secrète sur son appareil) garde toutes les fonctions ; un invité ne voit que les révisions.
+  const estParent = () => !scriptUrl() || !!P.cle;
+
+  // ───────────────────────── Accès sur invitation ─────────────────────────
+  // Code reçu dans le lien (?invitation=…) + identifiant aléatoire de cet appareil. Gardés à part de la
+  // progression pour que l'export / import ne permette pas de copier l'accès sur un autre appareil.
+  const ACCES_KEY = "brevetquizz_acces_v1";
+  let ACCES = {};
+  try { ACCES = JSON.parse(localStorage.getItem(ACCES_KEY) || "{}"); } catch (e) { /* stockage indisponible */ }
+  if (!ACCES.appareil) {
+    const b = new Uint8Array(16);
+    crypto.getRandomValues(b);
+    ACCES.appareil = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  }
+  const lienUrl = new URL(location.href);
+  if (lienUrl.searchParams.get("invitation")) {
+    ACCES.code = lienUrl.searchParams.get("invitation").trim();
+    lienUrl.searchParams.delete("invitation"); // le code n'apparaît plus dans la barre d'adresse
+    history.replaceState(null, "", lienUrl.pathname + lienUrl.search + lienUrl.hash);
+  }
+  try { localStorage.setItem(ACCES_KEY, JSON.stringify(ACCES)); } catch (e) { /* stockage indisponible */ }
+  const lienInvitation = (code) => location.origin + location.pathname + "?invitation=" + encodeURIComponent(code);
 
   function niveau(xp) {
     let i = 0;
@@ -159,16 +182,37 @@
       .sort((a, b) => a.annee - b.annee);
     return { quiz, fiches, frise, ignorees };
   }
+  // Tableau brut renvoyé par le script (1re ligne = en-têtes) → objets comme pour gviz.
+  function objets(tableau) {
+    const cles = (tableau[0] || []).map(norm);
+    return tableau.slice(1).map((l) => {
+      const o = {};
+      cles.forEach((k, i) => { if (k) o[k] = String(l[i] == null ? "" : l[i]).trim(); });
+      return o;
+    });
+  }
   async function chargerDonnees() {
     try {
-      const [q, f, fr] = await Promise.all([chargerOnglet("Quiz"), chargerOnglet("Fiches"), chargerOnglet("Frise").catch(() => null)]);
-      const brut = { quiz: lignes(q), fiches: lignes(f), frise: fr ? lignes(fr) : [] };
+      let brut;
+      if (scriptUrl()) {
+        const r = await envoyer({ action: "donnees", code: ACCES.code || "", appareil: ACCES.appareil });
+        brut = { quiz: objets(r.quiz), fiches: objets(r.fiches), frise: objets(r.frise) };
+      } else {
+        const [q, f, fr] = await Promise.all([chargerOnglet("Quiz"), chargerOnglet("Fiches"), chargerOnglet("Frise").catch(() => null)]);
+        brut = { quiz: lignes(q), fiches: lignes(f), frise: fr ? lignes(fr) : [] };
+      }
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ brut, date: new Date().toISOString() })); } catch (e) { /* plein */ }
       D = Object.assign(construire(brut), { charge: new Date(), horsLigne: false });
     } catch (err) {
+      if (err.code) { // accès refusé (invitation révoquée, lien déjà utilisé…) : on efface la copie locale
+        try { localStorage.removeItem(CACHE_KEY); } catch (e) { /* rien */ }
+        throw err;
+      }
       let cache = null;
       try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) { /* rien */ }
       if (!cache) throw err;
+      // Un invité hors ligne garde l'accès 7 jours au plus sans que le script ait revérifié son invitation.
+      if (scriptUrl() && !P.cle && Date.now() - new Date(cache.date) > 7 * 864e5) throw err;
       D = Object.assign(construire(cache.brut), { charge: new Date(cache.date), horsLigne: true });
     }
   }
@@ -280,8 +324,24 @@
     if (!url) throw new Error("Le script Google n'est pas configuré (Statistiques > Réglages).");
     const rep = await fetch(url, { method: "POST", body: JSON.stringify(Object.assign({ cle: P.cle }, payload)) });
     const json = await rep.json();
-    if (!json.ok) throw new Error(json.erreur || "Erreur inconnue");
+    if (!json.ok) {
+      const err = new Error(json.erreur || "Erreur inconnue");
+      if (json.code && json.code !== "cle") err.code = json.code;
+      throw err;
+    }
     return json;
+  }
+  // Charge les données puis affiche l'accueil, l'écran d'accès refusé ou l'erreur réseau.
+  function demarrer(apres) {
+    aller("chargement");
+    chargerDonnees()
+      .then(() => (apres ? apres() : aller("accueil")))
+      .catch((e) => {
+        if (!e.code) return aller("erreur");
+        const cleRefusee = !!P.cle; // une clé enregistrée mais refusée est fausse : on l'oublie
+        if (cleRefusee) { P.cle = ""; save(); }
+        aller("acces", { motif: e.code, message: e.message, cleRefusee });
+      });
   }
 
   // ───────────────────────── Routage ─────────────────────────
@@ -303,8 +363,21 @@
     erreur: () => `<div class="card stack center">
       <div style="font-size:3rem">😕</div>
       <h2>Impossible de charger les révisions</h2>
-      <p class="muted">Vérifie la connexion internet, et que le Google Sheet est partagé en « Tous les utilisateurs disposant du lien ».</p>
+      <p class="muted">Vérifie ta connexion internet puis réessaie.</p>
       <button class="btn-primary" data-action="recharger">Réessayer</button></div>`,
+
+    acces: () => `<div class="card stack center" style="margin-top:40px">
+      <div style="font-size:3.5rem">🔒</div>
+      <h1>BrevetQuizz</h1>
+      <p>${esc(vue.message || "Cette app est accessible uniquement sur invitation.")}</p>
+      <p class="small muted">${vue.motif === "deja_utilisee"
+        ? "Chaque lien d'invitation ne fonctionne que sur un seul appareil. Demande un nouveau lien à la personne qui t'a invité."
+        : "Demande un lien d'invitation à la personne qui gère l'app."}</p>
+      ${vue.cleRefusee ? `<p class="warn">Clé secrète incorrecte.</p>` : ""}
+      <details style="text-align:left" ${vue.cleRefusee ? "open" : ""}><summary class="small muted">Je suis le parent</summary>
+        <form data-form="cle-parent" class="stack" style="margin-top:8px">
+          <input name="cle" type="password" placeholder="Clé secrète du script" autocomplete="off" required>
+          <button class="btn-primary">Entrer</button></form></details></div>`,
 
     prenom: () => `<div class="card stack center" style="margin-top:40px">
       <div style="font-size:3.5rem">🎓</div>
@@ -471,7 +544,10 @@
           <button class="btn-primary">Entrer</button></form></div>`;
       }
       const onglet = vue.onglet || "suivi";
-      const tabs = [["suivi", "📊 Suivi"], ["ajouter", "➕ Ajouter"], ["qualite", "🔎 Qualité"], ["reglages", "⚙️ Réglages"]];
+      const tabs = [["suivi", "📊 Suivi"]]
+        .concat(estParent() ? [["ajouter", "➕ Ajouter"], ["qualite", "🔎 Qualité"]] : [])
+        .concat(scriptUrl() && P.cle ? [["partager", "🔗 Partager"]] : [])
+        .concat([["reglages", "⚙️ Réglages"]]);
       return `${retour()}<h1>Statistiques</h1>
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${k === onglet ? "on" : ""}" data-action="onglet" data-onglet="${k}">${l}</button>`).join("")}</div>
         ${PARENT[onglet]()}`;
@@ -570,20 +646,60 @@
         <p class="hint">Pour corriger, modifiez directement la ligne dans le Google Sheet puis rechargez les données (⚙️ Réglages).</p></div>`;
     },
 
-    reglages: () => `<div class="card">
+    partager: () => {
+      if (!vue.invitations && !vue.chargeInv) {
+        vue.chargeInv = true;
+        envoyer({ action: "invitations" })
+          .then((r) => { vue.invitations = r.invitations; render(); })
+          .catch((e) => { vue.invitations = []; toast("❌ " + e.message, 5000); render(); });
+      }
+      const invs = vue.invitations;
+      const etat = (i) => i.statut !== "actif" ? `<span style="color:var(--bad)">Désactivée</span>`
+        : i.utilise ? `<span class="done">Active</span><div class="small muted">vue le ${esc(i.visite || i.active)}</div>`
+        : `<span class="muted">Pas encore ouverte</span>`;
+      const actions = (i) => [
+        i.statut === "actif" && !i.utilise ? `<button class="small" data-action="copier-lien" data-lien="${esc(lienInvitation(i.code))}">📋 Lien</button>` : "",
+        i.statut === "actif" ? `<button class="small" data-action="inv" data-op="revoquer" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}" style="color:var(--bad)">Désactiver</button>`
+          : `<button class="small" data-action="inv" data-op="reactiver" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}">Réactiver</button>`,
+        i.utilise ? `<button class="small" data-action="inv" data-op="liberer" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}" title="Si la personne a changé de téléphone">Nouvel appareil</button>` : ""
+      ].join(" ");
+      const n = vue.nouveau;
+      return `<form data-form="inviter" class="card">
+          <h3>Inviter quelqu'un</h3>
+          <p class="small muted">Chaque invitation crée un lien personnel qui ne fonctionne que sur <strong>le premier appareil</strong> qui l'ouvre. S'il est transféré à quelqu'un d'autre, il ne marchera pas. Vous pouvez désactiver un accès à tout moment.</p>
+          <label>Prénom de la personne</label><input name="nom" required maxlength="40" placeholder="Ex : Lucas">
+          <button class="btn-primary btn-big" style="margin-top:12px">Créer le lien d'invitation</button></form>
+        ${n ? `<div class="card stack" style="margin-top:12px">
+          <strong>✅ Lien pour ${esc(n.nom)}</strong>
+          <input readonly value="${esc(lienInvitation(n.code))}">
+          <div class="row"><button class="btn-primary" data-action="copier-lien" data-lien="${esc(lienInvitation(n.code))}">📋 Copier le lien</button>
+          ${navigator.share ? `<button data-action="envoyer-lien" data-lien="${esc(lienInvitation(n.code))}">📤 Envoyer…</button>` : ""}</div>
+          <p class="hint">Envoyez-le uniquement à ${esc(n.nom)}. Ne l'ouvrez pas vous-même : il serait lié à votre appareil.</p></div>` : ""}
+        <div class="card" style="margin-top:12px"><h3>Invitations</h3>
+          ${!invs ? `<p class="muted">Chargement…</p>` : !invs.length ? `<p class="muted">Aucune invitation pour l'instant.</p>`
+          : `<table><thead><tr><th>Personne</th><th>État</th><th></th></tr></thead><tbody>
+            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong><div class="small muted">créée le ${esc(i.cree)}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
+            </tbody></table>`}
+        </div>`;
+    },
+
+    reglages: () => !estParent() ? PARENT.reglagesEleve() : `<div class="card">
         <h3>Google Sheet</h3>
         <p class="small muted">${D.quiz.length} questions · ${D.fiches.length} fiches · ${D.frise.length} dates. Chargé ${D.charge ? "le " + D.charge.toLocaleString("fr-FR") : "—"}${D.horsLigne ? " (copie hors ligne)" : ""}.</p>
         <div class="row"><a class="btn" href="https://docs.google.com/spreadsheets/d/${esc(CONFIG.sheetId)}/edit" target="_blank" rel="noopener">Ouvrir le Sheet ↗</a>
         <button data-action="recharger">🔄 Recharger les données</button></div>
       </div>
       <form data-form="script" class="card" style="margin-top:12px">
-        <h3>Ajout depuis l'app (script Google)</h3>
-        <p class="small muted">Nécessaire pour ajouter des questions depuis l'app. Installation : voir le fichier README (5 minutes, une seule fois).</p>
+        <h3>Script Google</h3>
+        <p class="small muted">Nécessaire pour ajouter des questions depuis l'app et pour le partage sur invitation. Installation : voir le fichier README (5 minutes, une seule fois).</p>
         <label>URL du script (finit par /exec)</label><input name="url" value="${esc(scriptUrl())}" placeholder="https://script.google.com/macros/s/…/exec">
         <label>Clé secrète (celle écrite dans le script)</label><input name="cle" value="${esc(P.cle)}" autocomplete="off">
         <div class="row" style="margin-top:12px"><button class="btn-primary">Enregistrer et tester</button></div>
       </form>
-      <form data-form="reglages" class="card" style="margin-top:12px">
+      ${PARENT.reglagesEleve()}`,
+
+    // Réglages visibles par tout le monde (y compris les invités).
+    reglagesEleve: () => `<form data-form="reglages" class="card" style="margin-top:12px">
         <h3>Élève</h3>
         <label>Prénom</label><input name="prenom" value="${esc(P.prenom)}" maxlength="30">
         <label>Code parent (facultatif, protège cet espace)</label><input name="pin" value="${esc(P.pin)}" inputmode="numeric" maxlength="8" autocomplete="off">
@@ -790,8 +906,23 @@
     else if (a === "type") aller("parent", { ok: true, onglet: "ajouter", type: el.dataset.type, mat: vue.mat });
     else if (a === "recharger") {
       const depuisParent = vue.nom === "parent";
-      aller("chargement");
-      chargerDonnees().then(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); }).catch(() => aller("erreur"));
+      demarrer(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); });
+    }
+    else if (a === "copier-lien") {
+      navigator.clipboard.writeText(el.dataset.lien).then(() => toast("📋 Lien copié"), () => toast("Copie impossible : sélectionnez le lien à la main"));
+    }
+    else if (a === "envoyer-lien") {
+      navigator.share({ title: "BrevetQuizz", text: "Ton accès personnel à BrevetQuizz pour réviser le brevet :", url: el.dataset.lien }).catch(() => {});
+    }
+    else if (a === "inv") {
+      const op = el.dataset.op, nom = el.dataset.nom;
+      const q = { revoquer: `Désactiver l'accès de ${nom} ? L'app ne s'ouvrira plus sur son appareil.`,
+        liberer: `${nom} a changé d'appareil ? Son lien pourra être utilisé une fois sur un nouvel appareil (l'ancien perd l'accès).` }[op];
+      if (q && !confirm(q)) return;
+      el.disabled = true;
+      envoyer({ action: op, code: el.dataset.code })
+        .then(() => { toast("✅ C'est fait"); aller("parent", { ok: true, onglet: "partager" }); })
+        .catch((e) => { toast("❌ " + e.message, 5000); el.disabled = false; });
     }
     else if (a === "exporter") {
       const blob = new Blob([JSON.stringify(P, null, 1)], { type: "application/json" });
@@ -860,6 +991,17 @@
     else if (type === "pin") {
       if (fd.get("pin") === P.pin) aller("parent", { ok: true }); else { toast("Code incorrect"); }
     }
+    else if (type === "cle-parent") {
+      P.cle = String(fd.get("cle")).trim(); save();
+      demarrer();
+    }
+    else if (type === "inviter") {
+      const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Création…";
+      try {
+        const r = await envoyer({ action: "creerInvitation", nom: fd.get("nom") });
+        aller("parent", { ok: true, onglet: "partager", nouveau: r });
+      } catch (e) { toast("❌ " + e.message, 5000); btn.disabled = false; btn.textContent = "Créer le lien d'invitation"; }
+    }
     else if (type === "reglages") {
       P.prenom = String(fd.get("prenom")).trim() || P.prenom; P.pin = String(fd.get("pin")).trim(); save(); toast("Enregistré ✅");
     }
@@ -907,6 +1049,5 @@
   });
 
   // ───────────────────────── Démarrage ─────────────────────────
-  aller("chargement");
-  chargerDonnees().then(() => aller("accueil")).catch(() => aller("erreur"));
+  demarrer();
 })();

@@ -56,6 +56,21 @@ Pour que l'app écrive directement dans le Sheet :
 
 > Si vous modifiez le script plus tard : **Déployer > Gérer les déploiements > ✏️ > Nouvelle version**, pour garder la même URL.
 
+## Partager l'app sur invitation
+
+Une fois l'URL du script inscrite dans `js/config.js` (`scriptUrl`), l'app passe en **accès sur invitation** :
+
+- Sans invitation, l'app affiche « accessible uniquement sur invitation » et ne montre aucune question.
+- **Statistiques > 🔗 Partager** : saisissez un prénom pour créer un **lien personnel**. Ce lien ne fonctionne que sur **le premier appareil qui l'ouvre**. Transféré à quelqu'un d'autre, il affiche « lien déjà utilisé ».
+- Dans la liste des invitations, vous pouvez **désactiver** un accès (l'app se verrouille sur cet appareil) ou le **réactiver**. Si la personne change de téléphone, le bouton **Nouvel appareil** lui permet de réutiliser son lien une fois sur le nouveau.
+- Seul le parent peut inviter. Sur son propre appareil, il touche « Je suis le parent » sur l'écran verrouillé et saisit la clé secrète du script.
+- Votre fils a besoin lui aussi d'une invitation, à ouvrir sur son téléphone. Sa progression est conservée.
+- Les invitations sont enregistrées dans l'onglet **Accès** du Google Sheet.
+
+Pour que ce soit vraiment privé, passez le partage du Google Sheet en **« Accès restreint »**. Les questions ne sont alors plus lisibles que par le script.
+
+*Limites* : un invité peut toujours prêter son téléphone ou faire des captures d'écran. Le code de l'app et le pack de questions (`js/pack.js`) restent visibles sur GitHub, puisque le repo est public. Un invité hors ligne garde l'accès 7 jours au plus sans nouvelle vérification.
+
 ### Créer des questions à partir de ses cours
 Prenez son cours en photo ou copiez-le, puis demandez à Claude par exemple :
 > « Fais 15 questions de brevet sur ce cours, en tableau avec les colonnes Matière | Thème | Question | Bonne réponse | Mauvaise réponse 1 | Mauvaise réponse 2 | Mauvaise réponse 3 | Explication. Les mauvaises réponses doivent être très proches de la bonne, de même forme et de même longueur. »
