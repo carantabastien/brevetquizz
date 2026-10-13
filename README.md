@@ -5,11 +5,11 @@ Le contenu vient d'un **Google Sheet** que le parent complète au fil des cours.
 
 ## Ce que fait l'app
 
-- **Quiz par matière** (5, 10, 15 ou 20 questions). Les questions déjà vues **ne reviennent pas** tant que toute la matière n'a pas été faite.
+- **Nouvelle partie** : on coche une ou plusieurs matières parmi les 17 matières de 3e (plus les dates), et on choisit 5, 10, 15 ou 20 questions. Les questions sont réparties équitablement entre les matières. Les questions déjà vues **ne reviennent pas** tant que tout n'a pas été fait.
 - **Quiz des dates** généré à partir de l'onglet Frise : « En quelle année… ? » et « Que s'est-il passé en… ? », avec des pièges tirés d'années proches.
 - **Mes erreurs** : les questions ratées reviennent dans un mode « revanche » jusqu'à ce qu'elles soient réussies.
 - **Fiches** par matière, avec un bouton « Je maîtrise ». Après une erreur, l'app propose la fiche correspondante.
-- **Espace parent** (code facultatif) :
+- **Statistiques** (code facultatif) :
   - **Suivi** : taux de réussite par matière, questions encore jamais vues, erreurs ;
   - **Ajouter** : formulaire de question, de fiche, de date, ou collage de plusieurs lignes ;
   - **Qualité** : liste les questions dont la bonne réponse se devine par élimination.
@@ -47,8 +47,8 @@ Pour que l'app écrive directement dans le Sheet :
    - Exécuter en tant que : **Moi**
    - Qui a accès : **Tout le monde**
 6. Copiez l'**URL de l'application Web** (elle se termine par `/exec`).
-7. Dans l'app : **Espace parent > ⚙️ Réglages**, collez l'URL et la clé secrète, puis cliquez sur **Enregistrer et tester**.
-8. Dans **Espace parent > ➕ Ajouter**, cliquez sur **Installer le pack dans le Google Sheet**. Le pack apporte :
+7. Dans l'app : **Statistiques > ⚙️ Réglages**, collez l'URL et la clé secrète, puis cliquez sur **Enregistrer et tester**.
+8. Dans **Statistiques > ➕ Ajouter**, cliquez sur **Installer le pack dans le Google Sheet**. Le pack apporte :
    - de meilleures mauvaises réponses pour les questions existantes ;
    - environ 80 questions et 90 points de fiches en maths, français, histoire-géo, EMC, physique-chimie, SVT et technologie.
 

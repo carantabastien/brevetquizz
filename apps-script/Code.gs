@@ -8,7 +8,7 @@
  * 3. Déployer > Nouveau déploiement > type « Application Web »
  *    - Exécuter en tant que : Moi
  *    - Qui a accès : Tout le monde
- *    Copie l'URL obtenue (elle finit par /exec) dans l'app : Espace parent > Réglages.
+ *    Copie l'URL obtenue (elle finit par /exec) dans l'app : Statistiques > Réglages.
  */
 const CLE_SECRETE = 'change-moi';
 

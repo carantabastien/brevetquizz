@@ -1,4 +1,4 @@
-// Pack de contenu BrevetQuizz : installé dans le Google Sheet depuis l'Espace parent.
+// Pack de contenu BrevetQuizz : installé dans le Google Sheet depuis l'espace Statistiques.
 // - les entrées avec « cle » remplacent la question existante (pièges plus proches de la bonne réponse)
 // - les autres sont ajoutées
 window.BQ_PACK = {

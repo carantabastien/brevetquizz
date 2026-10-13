@@ -15,7 +15,22 @@
     "Maths": ["#2563eb", "📐"], "Français": ["#db2777", "📖"], "Histoire": ["#b45309", "🏛️"],
     "Géographie": ["#059669", "🌍"], "EMC": ["#7c3aed", "⚖️"], "Physique-Chimie": ["#0891b2", "⚗️"],
     "SVT": ["#65a30d", "🧬"], "Technologie": ["#475569", "⚙️"], "Anglais": ["#dc2626", "🇬🇧"],
-    "Espagnol": ["#ea580c", "🇪🇸"], "Allemand": ["#ca8a04", "🇩🇪"]
+    "Espagnol": ["#ea580c", "🇪🇸"], "Allemand": ["#ca8a04", "🇩🇪"], "Italien": ["#16a34a", "🇮🇹"],
+    "Latin": ["#92400e", "🏺"], "Grec": ["#1d4ed8", "📜"], "Arts plastiques": ["#c026d3", "🎨"],
+    "Éducation musicale": ["#e11d48", "🎵"], "EPS": ["#0d9488", "⚽"]
+  };
+  // Toutes les matières enseignées en 3e (langues et options comprises), dans l'ordre d'affichage.
+  const MATIERES_3E = ["Français", "Maths", "Histoire", "Géographie", "EMC", "Physique-Chimie", "SVT", "Technologie",
+    "Anglais", "Espagnol", "Allemand", "Italien", "Latin", "Grec", "Arts plastiques", "Éducation musicale", "EPS"];
+  // Autres façons d'écrire une matière dans le Sheet → nom officiel ci-dessus.
+  const ALIAS_MATIERES = {
+    "math": "Maths", "mathematiques": "Maths", "mathematique": "Maths",
+    "physique": "Physique-Chimie", "physique chimie": "Physique-Chimie", "pc": "Physique-Chimie",
+    "sciences de la vie et de la terre": "SVT", "techno": "Technologie",
+    "education morale et civique": "EMC", "enseignement moral et civique": "EMC",
+    "geo": "Géographie", "lv1 anglais": "Anglais", "grec ancien": "Grec",
+    "arts": "Arts plastiques", "musique": "Éducation musicale",
+    "education physique et sportive": "EPS", "sport": "EPS"
   };
   const NIVEAUX = [
     [0, "Débutant"], [100, "Apprenti"], [250, "Élève motivé"], [500, "Bûcheur"], [850, "Solide"],
@@ -118,12 +133,16 @@
       return o;
     });
   }
+  function canonMatiere(m) {
+    const n = norm(m).replace(/-/g, " ");
+    return MATIERES_3E.find((x) => norm(x).replace(/-/g, " ") === n) || ALIAS_MATIERES[n] || String(m || "").trim();
+  }
   function construire(brut) {
     const ignorees = [];
     const quiz = [];
     brut.quiz.forEach((l, i) => {
       const pieges = [l["mauvaise reponse 1"], l["mauvaise reponse 2"], l["mauvaise reponse 3"]].filter(Boolean);
-      const q = { matiere: l["matiere"], theme: l["theme"], question: l["question"], bonne: l["bonne reponse"], pieges, explication: l["explication"] };
+      const q = { matiere: canonMatiere(l["matiere"]), theme: l["theme"], question: l["question"], bonne: l["bonne reponse"], pieges, explication: l["explication"] };
       if (!q.question && !q.bonne) return; // ligne vide
       if (!q.matiere || !q.question || !q.bonne || pieges.length < 2) { ignorees.push({ ligne: i + 2, q }); return; }
       q.id = "q" + hash(norm(q.matiere) + "|" + norm(q.question));
@@ -133,8 +152,9 @@
     const parCle = {};
     brut.fiches.forEach((l) => {
       if (!l["fiche"] || !l["point a retenir"]) return;
-      const cle = norm(l["matiere"]) + "|" + norm(l["fiche"]);
-      if (!parCle[cle]) { parCle[cle] = { cle: "f" + hash(cle), matiere: l["matiere"], theme: l["theme"], titre: l["fiche"], points: [] }; fiches.push(parCle[cle]); }
+      const matiere = canonMatiere(l["matiere"]);
+      const cle = norm(matiere) + "|" + norm(l["fiche"]);
+      if (!parCle[cle]) { parCle[cle] = { cle: "f" + hash(cle), matiere, theme: l["theme"], titre: l["fiche"], points: [] }; fiches.push(parCle[cle]); }
       parCle[cle].points.push(l["point a retenir"]);
     });
     const frise = brut.frise
@@ -158,7 +178,8 @@
   }
 
   // ───────────────────────── Fabrique de questions ─────────────────────────
-  const matieres = () => [...new Set(D.quiz.map((q) => q.matiere).concat(D.fiches.map((f) => f.matiere)))];
+  // Matières de 3e d'abord (même vides), puis celles du Sheet qui ne sont pas dans la liste.
+  const matieres = () => [...new Set(MATIERES_3E.concat(D.quiz.map((q) => q.matiere), D.fiches.map((f) => f.matiere)))];
 
   function questionsFrise() {
     const out = [];
@@ -169,6 +190,12 @@
     return out;
   }
   function toutesQuestions() { return D.quiz.concat(questionsFrise()); }
+  const poolDe = (id) => (id === "#frise" ? questionsFrise() : D.quiz.filter((q) => q.matiere === id));
+  // Matières cochées pour la prochaine partie (par défaut : toutes celles qui ont des questions).
+  function selection() {
+    if (!Array.isArray(P.selection)) P.selection = matieres().filter((m) => poolDe(m).length).concat(D.frise.length ? ["#frise"] : []);
+    return new Set(P.selection);
+  }
 
   // Prépare l'affichage d'une question (les dates génèrent des pièges proches à chaque fois).
   function preparer(q) {
@@ -201,18 +228,30 @@
     return Object.assign({}, q, { choix: shuffle([q.bonne].concat(q.pieges)) });
   }
 
-  // Tire n questions jamais vues. Quand tout a été vu, on recommence un nouveau cycle.
-  function tirer(pool, n) {
-    let nonVues = shuffle(pool.filter((q) => !P.vues[q.id]));
+  // Tire n questions jamais vues, à tour de rôle dans chaque groupe (une matière = un groupe)
+  // pour que le mélange soit équilibré. Quand tout a été vu, on recommence un nouveau cycle.
+  function tirer(groupes, n) {
     let cycle = false;
-    if (nonVues.length < n) {
+    const listes = groupes.filter((g) => g.length).map((pool) => ({ pool, reste: shuffle(pool.filter((q) => !P.vues[q.id])) }));
+    const pris = [];
+    while (pris.length < n) {
+      let avance = false;
+      for (const l of listes) {
+        if (pris.length >= n) break;
+        if (l.reste.length) { pris.push(l.reste.shift()); avance = true; }
+      }
+      if (avance) continue;
+      // Plus aucune question jamais vue : nouveau tour, sans reprendre celles déjà tirées.
       cycle = true;
-      const deja = new Set(nonVues.map((q) => q.id));
-      pool.forEach((q) => { if (!deja.has(q.id)) delete P.vues[q.id]; });
-      save();
-      nonVues = nonVues.concat(shuffle(pool.filter((q) => !deja.has(q.id))));
+      const ids = new Set(pris.map((q) => q.id));
+      listes.forEach((l) => {
+        l.pool.forEach((q) => { if (!ids.has(q.id)) delete P.vues[q.id]; });
+        l.reste = shuffle(l.pool.filter((q) => !ids.has(q.id)));
+      });
+      if (listes.every((l) => !l.reste.length)) break;
     }
-    return { questions: nonVues.slice(0, n).map(preparer), cycle };
+    if (cycle) save();
+    return { questions: shuffle(pris).map(preparer), cycle };
   }
 
   // ───────────────────────── Contrôle qualité des réponses ─────────────────────────
@@ -242,7 +281,7 @@
   // ───────────────────────── Écriture dans le Sheet (Apps Script) ─────────────────────────
   async function envoyer(payload) {
     const url = scriptUrl();
-    if (!url) throw new Error("Le script Google n'est pas configuré (Espace parent > Réglages).");
+    if (!url) throw new Error("Le script Google n'est pas configuré (Statistiques > Réglages).");
     const rep = await fetch(url, { method: "POST", body: JSON.stringify(Object.assign({ cle: P.cle }, payload)) });
     const json = await rep.json();
     if (!json.ok) throw new Error(json.erreur || "Erreur inconnue");
@@ -297,36 +336,44 @@
       </section>
       ${D.horsLigne ? `<p class="warn">📴 Hors connexion : j'utilise les révisions chargées le ${D.charge.toLocaleDateString("fr-FR")}.</p>` : ""}
       <div class="menu">
-        <button data-go="choix" class="wide btn-primary" style="color:#fff"><span class="ico">🎯</span> Lancer un quiz</button>
+        <button data-go="choix" class="wide btn-primary" style="color:#fff"><span class="ico">🎯</span> Nouvelle partie</button>
         <button data-go="fiches"><span class="ico">📘</span>Fiches<span class="sub">${plural(D.fiches.length, "fiche")}</span></button>
         <button data-go="frise"><span class="ico">⏳</span>Frise<span class="sub">${plural(D.frise.length, "date")}</span></button>
         <button data-action="erreurs" ${nbErr ? "" : "disabled"}><span class="ico">🩹</span>Mes erreurs<span class="sub">${nbErr ? plural(nbErr, "à revoir", "à revoir") : "Aucune 👌"}</span></button>
         <button data-go="badges"><span class="ico">🏅</span>Badges<span class="sub">${nbBadges} débloqué${nbBadges > 1 ? "s" : ""}</span></button>
-        <button data-go="parent" class="wide btn-ghost"><span>👨‍👩‍👦</span> Espace parent</button>
+        <button data-go="parent" class="wide btn-ghost"><span>📊</span> Statistiques</button>
       </div>`;
     },
 
+    // Nouvelle partie : on coche une ou plusieurs matières de 3e.
     choix: () => {
-      const all = toutesQuestions();
       const n = vue.n || P.dernierN || 10;
-      const carte = (id, nom, pool, ico, c) => {
-        const vues = pool.filter((q) => P.vues[q.id]).length;
-        const pct = pool.length ? Math.round(vues / pool.length * 100) : 0;
-        return `<button class="subject" style="--c:${c}" data-action="quiz" data-pool="${esc(id)}" ${pool.length ? "" : "disabled"}>
-          <span class="name">${ico} ${esc(nom)}</span>
-          <span class="small muted">${pool.length - vues} nouvelle${pool.length - vues > 1 ? "s" : ""} sur ${pool.length}</span>
-          <span class="progress"><span style="width:${pct}%"></span></span></button>`;
+      const sel = selection();
+      const items = matieres().map((m) => ({ id: m, nom: m, pool: poolDe(m), ico: emoji(m), c: couleur(m) }));
+      if (D.frise.length) items.splice(4, 0, { id: "#frise", nom: "Dates (frise)", pool: questionsFrise(), ico: "⏳", c: "#b45309" });
+      const dispo = items.filter((x) => x.pool.length);
+      const nbQ = dispo.filter((x) => sel.has(x.id)).reduce((s, x) => s + x.pool.length, 0);
+      const nbM = dispo.filter((x) => sel.has(x.id)).length;
+      const carte = (x) => {
+        const vues = x.pool.filter((q) => P.vues[q.id]).length;
+        const on = sel.has(x.id) && x.pool.length;
+        return `<button class="subject ${on ? "picked" : ""} ${x.pool.length ? "" : "empty"}" style="--c:${x.c}" data-action="toggle-mat" data-mat="${esc(x.id)}" aria-pressed="${on ? "true" : "false"}">
+          <span class="row"><span class="name">${x.ico} ${esc(x.nom)}</span><span class="spacer"></span><span class="check">${on ? "✓" : ""}</span></span>
+          <span class="small muted">${x.pool.length ? `${x.pool.length - vues} nouvelle${x.pool.length - vues > 1 ? "s" : ""} sur ${x.pool.length}` : "Pas encore de questions"}</span>
+          <span class="progress"><span style="width:${x.pool.length ? Math.round(vues / x.pool.length * 100) : 0}%"></span></span></button>`;
       };
       return `${retour()}
-      <h1>Choisis ton quiz</h1>
+      <h1>Nouvelle partie</h1>
       <div class="card"><div class="small muted" style="margin-bottom:6px">Nombre de questions</div>
         <div class="seg">${[5, 10, 15, 20].map((k) => `<button data-action="nbq" data-n="${k}" class="${k === n ? "on" : ""}">${k}</button>`).join("")}</div></div>
-      <div class="grid" style="margin-top:12px">
-        ${carte("*", "Toutes les matières", D.quiz, "🎲", "#4f46e5")}
-        ${D.frise.length ? carte("#frise", "Dates (frise)", questionsFrise(), "⏳", "#b45309") : ""}
-        ${matieres().map((m) => carte(m, m, D.quiz.filter((q) => q.matiere === m), emoji(m), couleur(m))).join("")}
+      <div class="row" style="margin:16px 0 8px"><h3 style="margin:0">Sur quelles matières ?</h3><span class="spacer"></span>
+        <button class="btn-ghost small" data-action="sel-tout">Tout</button><button class="btn-ghost small" data-action="sel-rien">Aucune</button></div>
+      <div class="grid">${items.map(carte).join("")}</div>
+      <div class="sticky-go">
+        <button class="btn-primary btn-big" data-action="go-partie" ${nbM ? "" : "disabled"}>
+          ${nbM ? `🎯 C'est parti : ${Math.min(n, nbQ)} questions · ${plural(nbM, "matière")}` : "Coche au moins une matière"}</button>
       </div>
-      <p class="small muted" style="margin-top:12px">Les questions déjà vues ne reviennent pas tant que tu n'as pas fait le tour de la matière.</p>`;
+      <p class="small muted" style="margin-top:12px">Les questions déjà vues ne reviennent pas tant que tu n'as pas fait le tour des matières choisies. Les matières grisées n'ont pas encore de questions : on peut en ajouter dans 📊 Statistiques &gt; Ajouter.</p>`;
     },
 
     quiz: () => {
@@ -420,16 +467,16 @@
       <div class="grid">${BADGES.map((b) => `<div class="card badge ${P.badges[b.id] ? "" : "locked"}">
         <div class="ico">${b.ico}</div><strong>${esc(b.nom)}</strong><div class="small muted">${esc(b.desc)}</div></div>`).join("")}</div>`,
 
-    // ─────────── Espace parent ───────────
+    // ─────────── Statistiques ───────────
     parent: () => {
       if (P.pin && !vue.ok) {
-        return `${retour()}<div class="card stack center"><h2>🔒 Espace parent</h2>
+        return `${retour()}<div class="card stack center"><h2>🔒 Statistiques</h2>
           <form data-form="pin" class="stack"><input name="pin" type="password" inputmode="numeric" placeholder="Code parent" autocomplete="off">
           <button class="btn-primary">Entrer</button></form></div>`;
       }
       const onglet = vue.onglet || "suivi";
       const tabs = [["suivi", "📊 Suivi"], ["ajouter", "➕ Ajouter"], ["qualite", "🔎 Qualité"], ["reglages", "⚙️ Réglages"]];
-      return `${retour()}<h1>Espace parent</h1>
+      return `${retour()}<h1>Statistiques</h1>
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${k === onglet ? "on" : ""}" data-action="onglet" data-onglet="${k}">${l}</button>`).join("")}</div>
         ${PARENT[onglet]()}`;
     }
@@ -438,7 +485,7 @@
   const PARENT = {
     suivi: () => {
       const all = toutesQuestions();
-      const lignesM = matieres().concat(D.frise.length ? ["Dates (frise)"] : []).map((m) => {
+      const lignesM = matieres().filter((m) => poolDe(m).length || P.stats[m]).concat(D.frise.length ? ["Dates (frise)"] : []).map((m) => {
         const pool = m === "Dates (frise)" ? questionsFrise() : D.quiz.filter((q) => q.matiere === m);
         const s = P.stats[m] || { ok: 0, total: 0 };
         const vues = pool.filter((q) => P.vues[q.id]).length;
@@ -581,10 +628,12 @@
     if (poolId === "#erreurs") pool = toutesQuestions().filter((q) => P.erreurs[q.id]);
     else if (poolId === "#frise") pool = questionsFrise();
     else if (poolId === "*") pool = D.quiz;
+    else if (poolId === "#selection") pool = [...selection()].flatMap(poolDe);
     else pool = D.quiz.filter((q) => q.matiere === poolId);
     if (!pool.length) { toast("Pas encore de questions ici."); return; }
     const n = poolId === "#erreurs" ? Math.min(pool.length, 10) : (vue.n || P.dernierN || 10);
-    const t = poolId === "#erreurs" ? { questions: shuffle(pool).slice(0, n).map(preparer), cycle: false } : tirer(pool, Math.min(n, pool.length));
+    const groupes = poolId === "#selection" ? [...selection()].map(poolDe) : [pool];
+    const t = poolId === "#erreurs" ? { questions: shuffle(pool).slice(0, n).map(preparer), cycle: false } : tirer(groupes, Math.min(n, pool.length));
     quiz = { poolId, questions: t.questions, cycle: t.cycle, i: 0, bons: 0, combo: 0, xp: 0, erreurs: 0, repondu: null, xpDebut: P.xp };
     aller("quiz");
   }
@@ -594,7 +643,7 @@
     const choix = q.choix[i];
     quiz.repondu = choix;
     const ok = choix === q.bonne;
-    const m = quiz.poolId === "#frise" ? "Dates (frise)" : q.matiere;
+    const m = q.type ? "Dates (frise)" : q.matiere;
     P.vues[q.id] = 1;
     P.repondues++;
     P.stats[m] = P.stats[m] || { ok: 0, total: 0 };
@@ -719,6 +768,16 @@
     if (a === "nbq") { P.dernierN = +el.dataset.n; save(); vue.n = +el.dataset.n; render(); }
     else if (a === "quiz") { fermerModale(); vue.n = vue.n || P.dernierN; lancerQuiz(el.dataset.pool); }
     else if (a === "erreurs") lancerQuiz("#erreurs");
+    else if (a === "toggle-mat") {
+      const id = el.dataset.mat;
+      if (!poolDe(id).length) { toast(`Pas encore de questions en ${id} : ajoute-en dans 📊 Statistiques > Ajouter.`, 4000); return; }
+      const s = selection();
+      s.has(id) ? s.delete(id) : s.add(id);
+      P.selection = [...s]; save(); render();
+    }
+    else if (a === "sel-tout") { P.selection = matieres().filter((m) => poolDe(m).length).concat(D.frise.length ? ["#frise"] : []); save(); render(); }
+    else if (a === "sel-rien") { P.selection = []; save(); render(); }
+    else if (a === "go-partie") lancerQuiz("#selection");
     else if (a === "repondre") repondre(+el.dataset.i);
     else if (a === "suivante") { if (quiz.i + 1 < quiz.questions.length) { quiz.i++; quiz.repondu = null; render(); window.scrollTo(0, 0); } else terminerQuiz(); }
     else if (a === "quitter") { if (confirm("Quitter le quiz ? Tes réponses déjà données sont gardées.")) aller("accueil"); }

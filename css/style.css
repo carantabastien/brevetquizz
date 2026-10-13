@@ -90,6 +90,11 @@ button:disabled { opacity: .5; cursor: default; }
 .subject .name { font-weight: 600; }
 .progress { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 8px; }
 .progress > span { display: block; height: 100%; background: var(--c, var(--primary)); }
+.subject.picked { background: color-mix(in srgb, var(--c) 12%, var(--card)); border-color: var(--c); }
+.subject.empty { opacity: .5; border-left-style: dashed; }
+.subject .check { width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; flex: none; }
+.subject.picked .check { background: var(--c); border-color: var(--c); }
+.sticky-go { position: sticky; bottom: 0; padding: 12px 0; margin-top: 8px; background: linear-gradient(transparent, var(--bg) 30%); }
 .seg { display: flex; gap: 6px; flex-wrap: wrap; }
 .seg button { flex: 1; min-width: 60px; }
 .seg button.on { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -164,3 +169,5 @@ td.num, th.num { text-align: right; }
 .confetti { position: fixed; top: -12px; width: 10px; height: 14px; z-index: 40; pointer-events: none; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(105vh) rotate(720deg); } }
 .loader { text-align: center; padding: 60px 0; color: var(--muted); }
+.subject > .row { flex-wrap: nowrap; align-items: flex-start; }
+.subject .name { min-width: 0; }
