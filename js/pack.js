@@ -1457,6 +1457,486 @@ window.BQ_PACK = {
     "Le charbon",
     "Biomasse (bois, déchets végétaux), soleil, vent, eau, géothermie : renouvelables. Uranium, gaz, charbon, pétrole : stocks limités."
    ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « Yesterday, I ___ to the cinema. »",
+    "went",
+    "goed",
+    "gone",
+    "have gone",
+    "Prétérit irrégulier : go → went (gone est le participe passé). « Yesterday » indique une action terminée → prétérit, pas present perfect."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Quel est le prétérit de « to buy » ?",
+    "bought",
+    "buyed",
+    "brought",
+    "boughted",
+    "buy → bought → bought. Attention : brought est le prétérit de « to bring » (apporter)."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « She has lived in London ___ 2015. »",
+    "since",
+    "for",
+    "during",
+    "from",
+    "Since + point de départ (since 2015). For + durée (for ten years)."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « Il pleut depuis deux heures » ?",
+    "It has been raining for two hours.",
+    "It is raining since two hours.",
+    "It has been raining since two hours.",
+    "It rains for two hours.",
+    "Action commencée dans le passé et qui dure encore : present perfect (be + -ing). « Deux heures » est une durée → for."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « Paris is ___ than Lyon. »",
+    "bigger",
+    "more big",
+    "biggest",
+    "more bigger",
+    "Adjectif court : + -er + than (big → bigger, la consonne finale est doublée). Biggest est le superlatif."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « If I ___ rich, I would travel around the world. »",
+    "were",
+    "am",
+    "will be",
+    "would be",
+    "Hypothèse : If + prétérit (were), would + verbe. On ne met jamais would ou will après if."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Que signifie « actually » ?",
+    "en fait",
+    "actuellement",
+    "activement",
+    "évidemment",
+    "Faux ami : actually = en fait, en réalité. « Actuellement » se dit currently ou at the moment."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « There isn't ___ milk left. »",
+    "any",
+    "some",
+    "no",
+    "many",
+    "Any dans les phrases négatives et interrogatives, some dans les affirmatives. Many s'emploie avec des noms dénombrables (milk ne l'est pas)."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète le question tag : « You like pizza, ___ ? »",
+    "don't you",
+    "do you",
+    "aren't you",
+    "isn't it",
+    "Phrase affirmative au présent simple → tag négatif avec l'auxiliaire do : don't you?"
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « I'm looking forward to ___ you. »",
+    "seeing",
+    "see",
+    "saw",
+    "seen",
+    "Dans « look forward to », to est une préposition : elle est suivie d'un verbe en -ing."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Complète : « Yo ___ estudiante. »",
+    "soy",
+    "estoy",
+    "es",
+    "estás",
+    "Ser pour l'identité, la profession, la nationalité : soy estudiante. Estar sert pour un état passager ou un lieu."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Complète : « Hoy yo ___ muy cansado. »",
+    "estoy",
+    "soy",
+    "es",
+    "estás",
+    "État passager (aujourd'hui je suis fatigué) → estar : estoy cansado."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « j'aime le chocolat » ?",
+    "Me gusta el chocolate.",
+    "Me gustan el chocolate.",
+    "Yo gusto el chocolate.",
+    "Me gusto el chocolate.",
+    "Gustar s'accorde avec ce qui plaît : el chocolate est singulier → me gusta. Au pluriel : me gustan los libros."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Complète : « Ayer ___ (comer, yo) una paella. »",
+    "comí",
+    "como",
+    "comeré",
+    "comé",
+    "Ayer → action terminée → passé simple (pretérito indefinido) : comí, comiste, comió…"
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Que signifie « embarazada » ?",
+    "enceinte",
+    "embarrassée",
+    "embrassée",
+    "enrhumée",
+    "Faux ami célèbre : embarazada = enceinte. « Enrhumé » se dit constipado (autre faux ami !)."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Complète : « Tengo que ___ los deberes. »",
+    "hacer",
+    "hago",
+    "hecho",
+    "haciendo",
+    "Tener que + INFINITIF = devoir (obligation personnelle)."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « il faut travailler » (de façon impersonnelle) ?",
+    "Hay que trabajar.",
+    "Tengo que trabajar.",
+    "Hay trabajar.",
+    "Es que trabajar.",
+    "Hay que + infinitif = obligation impersonnelle (il faut). Tengo que = je dois (obligation personnelle)."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Complète : « Estoy ___ (leer) un libro. »",
+    "leyendo",
+    "leiendo",
+    "leído",
+    "leer",
+    "Estar + gérondif = action en cours. Leer → leyendo (le i entre deux voyelles devient y). Leído est le participe passé."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Quel est le pluriel de « el lápiz » ?",
+    "los lápices",
+    "los lápizes",
+    "los lápiz",
+    "las lápices",
+    "Les mots en -z font leur pluriel en -ces : el lápiz → los lápices."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Comment dit-on 15 en espagnol ?",
+    "quince",
+    "catorce",
+    "dieciséis",
+    "cincuenta",
+    "14 = catorce, 15 = quince, 16 = dieciséis, 50 = cincuenta."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Quel est l'article de « Haus » (maison) ?",
+    "das",
+    "der",
+    "die",
+    "den",
+    "Das Haus est neutre. Der = masculin, die = féminin ou pluriel, den = accusatif masculin."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Complète : « Ich ___ müde. »",
+    "bin",
+    "ist",
+    "bist",
+    "habe",
+    "Sein (être) : ich bin, du bist, er/sie/es ist. « Je suis fatigué » → Ich bin müde."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Quelle phrase est correcte ?",
+    "Morgen gehe ich ins Kino.",
+    "Morgen ich gehe ins Kino.",
+    "Morgen ich ins Kino gehe.",
+    "Morgen gehe ins Kino ich.",
+    "Dans une phrase déclarative, le verbe conjugué est TOUJOURS en 2e position. Si la phrase commence par Morgen, le sujet passe après le verbe."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Quelle phrase est correcte ?",
+    "Ich weiß, dass er heute kommt.",
+    "Ich weiß, dass er kommt heute.",
+    "Ich weiß, dass kommt er heute.",
+    "Ich weiß, er dass heute kommt.",
+    "Dans une subordonnée (dass, weil, wenn…), le verbe conjugué va à la FIN."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Complète : « Ich habe ___ Bruder. » (un frère)",
+    "einen",
+    "ein",
+    "einem",
+    "eine",
+    "Bruder est masculin et COD → accusatif : einen. Ein = nominatif, einem = datif."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Complète : « Ich fahre mit ___ Bus. »",
+    "dem",
+    "den",
+    "der",
+    "das",
+    "Mit est toujours suivi du datif. Der Bus (masculin) → mit dem Bus."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Quel est le participe passé de « spielen » ?",
+    "gespielt",
+    "gespielen",
+    "spielte",
+    "gespielte",
+    "Verbe faible : ge- + radical + -t → gespielt. Spielte est le prétérit."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Complète : « Ich ___ nach Berlin gefahren. »",
+    "bin",
+    "habe",
+    "war",
+    "hat",
+    "Les verbes de mouvement (fahren, gehen, kommen…) forment le parfait avec sein : ich bin gefahren."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Que signifie « bekommen » ?",
+    "recevoir",
+    "devenir",
+    "convenir",
+    "commencer",
+    "Faux ami : bekommen = recevoir, obtenir. « Devenir » se dit werden."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « j'ai 15 ans » ?",
+    "Ich bin 15 Jahre alt.",
+    "Ich habe 15 Jahre alt.",
+    "Ich habe 15 Jahre.",
+    "Ich bin 15 Jahren alt.",
+    "En allemand, on « est » âgé : Ich bin … Jahre alt (comme en anglais : I am 15 years old)."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Complète : « Io ___ italiano. »",
+    "sono",
+    "sei",
+    "è",
+    "ho",
+    "Essere : io sono, tu sei, lui/lei è. Ho vient du verbe avere (avoir)."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « j'ai faim » ?",
+    "Ho fame.",
+    "Sono fame.",
+    "Ho la fame.",
+    "Faccio fame.",
+    "Comme en français, on utilise avere sans article : ho fame, ho sete, ho freddo."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Quel article met-on devant « studente » ?",
+    "lo",
+    "il",
+    "l'",
+    "la",
+    "Lo devant un nom masculin qui commence par s + consonne, z, gn, ps : lo studente, lo zaino. Il devant les autres consonnes."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Quel est le pluriel de « il libro » ?",
+    "i libri",
+    "i libre",
+    "gli libri",
+    "le libri",
+    "Masculin en -o → pluriel en -i, et il → i : i libri. Gli s'emploie devant voyelle ou s + consonne (gli studenti)."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Complète : « Ieri ___ andato al mare. » (io)",
+    "sono",
+    "ho",
+    "è",
+    "sei",
+    "Les verbes de mouvement forment le passé composé avec essere : io sono andato."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Que signifie « la camera » ?",
+    "la chambre",
+    "la caméra",
+    "l'appareil photo",
+    "la cheminée",
+    "Faux ami : la camera = la chambre. L'appareil photo se dit la macchina fotografica."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « je m'appelle Marco » ?",
+    "Mi chiamo Marco.",
+    "Io chiamo Marco.",
+    "Mi chiama Marco.",
+    "Sono chiamo Marco.",
+    "Chiamarsi est pronominal : mi chiamo, ti chiami, si chiama."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « je ne parle pas italien » ?",
+    "Non parlo italiano.",
+    "Io no parlo italiano.",
+    "Parlo non italiano.",
+    "Non parla italiano.",
+    "La négation se fait avec non placé devant le verbe. « No » est la forme espagnole. Parla = il/elle parle."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Que signifie « ancora » ?",
+    "encore",
+    "alors",
+    "là-bas",
+    "toujours",
+    "Ancora = encore. Attention à allora = alors, et sempre = toujours."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Comment dit-on 16 en italien ?",
+    "sedici",
+    "sei",
+    "diciassette",
+    "sessanta",
+    "6 = sei, 16 = sedici, 17 = diciassette, 60 = sessanta."
+   ]
   }
  ],
  "fiches": [
@@ -2005,6 +2485,132 @@ window.BQ_PACK = {
    "Technologie : l'essentiel",
    "Réseaux et énergie",
    "Énergies renouvelables : soleil, vent, eau, biomasse, géothermie. Non renouvelables : pétrole, gaz, charbon, uranium."
+  ],
+  [
+   "Anglais",
+   "Grammaire et vocabulaire",
+   "L'essentiel en anglais",
+   "Prétérit : action terminée (yesterday, ago, last…). Réguliers en -ed ; irréguliers à apprendre : go → went, buy → bought, bring → brought."
+  ],
+  [
+   "Anglais",
+   "Grammaire et vocabulaire",
+   "L'essentiel en anglais",
+   "Present perfect + since (point de départ : since 2015) ou for (durée : for two hours). « Il pleut depuis 2 h » → It has been raining for two hours."
+  ],
+  [
+   "Anglais",
+   "Grammaire et vocabulaire",
+   "L'essentiel en anglais",
+   "Comparatif : adjectif court + -er than (bigger than) ; adjectif long : more + adjectif (more interesting than). Superlatif : the biggest, the most interesting."
+  ],
+  [
+   "Anglais",
+   "Grammaire et vocabulaire",
+   "L'essentiel en anglais",
+   "Some dans les phrases affirmatives, any dans les négatives et interrogatives. Question tag : You like pizza, don't you?"
+  ],
+  [
+   "Anglais",
+   "Grammaire et vocabulaire",
+   "L'essentiel en anglais",
+   "Hypothèse : If + prétérit, would + verbe (If I were rich, I would travel). Look forward to + V-ing."
+  ],
+  [
+   "Anglais",
+   "Grammaire et vocabulaire",
+   "L'essentiel en anglais",
+   "Faux amis : actually = en fait ; eventually = finalement ; library = bibliothèque."
+  ],
+  [
+   "Espagnol",
+   "Grammaire et vocabulaire",
+   "L'essentiel en espagnol",
+   "Ser : identité, profession, nationalité (soy estudiante). Estar : état passager, lieu (estoy cansado, estoy en casa)."
+  ],
+  [
+   "Espagnol",
+   "Grammaire et vocabulaire",
+   "L'essentiel en espagnol",
+   "Gustar s'accorde avec ce qui plaît : me gusta el chocolate / me gustan los libros."
+  ],
+  [
+   "Espagnol",
+   "Grammaire et vocabulaire",
+   "L'essentiel en espagnol",
+   "Passé simple (pretérito indefinido) pour une action terminée : comí, comiste, comió, comimos, comisteis, comieron."
+  ],
+  [
+   "Espagnol",
+   "Grammaire et vocabulaire",
+   "L'essentiel en espagnol",
+   "Obligation : tener que + infinitif (je dois), hay que + infinitif (il faut). Action en cours : estar + gérondif (estoy leyendo)."
+  ],
+  [
+   "Espagnol",
+   "Grammaire et vocabulaire",
+   "L'essentiel en espagnol",
+   "Pluriel des mots en -z : -ces (el lápiz → los lápices). Faux amis : embarazada = enceinte ; constipado = enrhumé."
+  ],
+  [
+   "Allemand",
+   "Grammaire et vocabulaire",
+   "L'essentiel en allemand",
+   "Phrase déclarative : verbe conjugué en 2e position (Morgen gehe ich ins Kino). Subordonnée (dass, weil, wenn) : verbe conjugué à la fin."
+  ],
+  [
+   "Allemand",
+   "Grammaire et vocabulaire",
+   "L'essentiel en allemand",
+   "Articles : der (masculin), die (féminin), das (neutre). Accusatif masculin : den / einen."
+  ],
+  [
+   "Allemand",
+   "Grammaire et vocabulaire",
+   "L'essentiel en allemand",
+   "Datif après mit, bei, von, zu, aus, nach, seit : mit dem Bus, mit der Mutter."
+  ],
+  [
+   "Allemand",
+   "Grammaire et vocabulaire",
+   "L'essentiel en allemand",
+   "Parfait : haben ou sein + participe passé (gespielt). Sein pour les verbes de mouvement : ich bin gefahren."
+  ],
+  [
+   "Allemand",
+   "Grammaire et vocabulaire",
+   "L'essentiel en allemand",
+   "Âge : Ich bin 15 Jahre alt. Faux ami : bekommen = recevoir (devenir = werden)."
+  ],
+  [
+   "Italien",
+   "Grammaire et vocabulaire",
+   "L'essentiel en italien",
+   "Essere : sono, sei, è, siamo, siete, sono. Avere : ho, hai, ha… On dit ho fame, ho sete, ho 15 anni."
+  ],
+  [
+   "Italien",
+   "Grammaire et vocabulaire",
+   "L'essentiel en italien",
+   "Articles masculins : il (il libro), lo devant s + consonne ou z (lo studente), l' devant voyelle. Pluriels : i libri, gli studenti."
+  ],
+  [
+   "Italien",
+   "Grammaire et vocabulaire",
+   "L'essentiel en italien",
+   "Passé composé : essere pour les verbes de mouvement (sono andato), avere pour les autres (ho mangiato)."
+  ],
+  [
+   "Italien",
+   "Grammaire et vocabulaire",
+   "L'essentiel en italien",
+   "Négation : non devant le verbe (non parlo italiano). Se présenter : mi chiamo Marco."
+  ],
+  [
+   "Italien",
+   "Grammaire et vocabulaire",
+   "L'essentiel en italien",
+   "Faux amis : la camera = la chambre ; ancora = encore ; allora = alors."
   ]
  ]
 };

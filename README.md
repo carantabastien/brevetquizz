@@ -26,6 +26,8 @@ Il doit être partagé en **« Tous les utilisateurs disposant du lien : Lecteur
 | **Fiches** | Matière · Thème · Fiche · Point à retenir *(une ligne par point ; les lignes qui ont le même titre de fiche forment une seule fiche)* |
 | **Frise** | Thème · Année · Événement |
 
+⚠️ **Ne laissez pas de filtre actif sur le Sheet** : l'app ne reçoit que les lignes visibles. Pour trier sans gêner l'app, utilisez **Données > Vues filtrées**.
+
 Le **Thème** relie tout : une question et une fiche qui ont le même thème sont liées.
 
 **Bien écrire les mauvaises réponses** (pour qu'il ne trouve pas par élimination) :
@@ -50,7 +52,7 @@ Pour que l'app écrive directement dans le Sheet :
 7. Dans l'app : **Statistiques > ⚙️ Réglages**, collez l'URL et la clé secrète, puis cliquez sur **Enregistrer et tester**.
 8. Dans **Statistiques > ➕ Ajouter**, cliquez sur **Installer le pack dans le Google Sheet**. Le pack apporte :
    - de meilleures mauvaises réponses pour les questions existantes ;
-   - environ 80 questions et 90 points de fiches en maths, français, histoire-géo, EMC, physique-chimie, SVT et technologie.
+   - environ 120 questions et 110 points de fiches en maths, français, histoire-géo, EMC, physique-chimie, SVT, technologie, anglais, espagnol, allemand et italien.
 
 > Si vous modifiez le script plus tard : **Déployer > Gérer les déploiements > ✏️ > Nouvelle version**, pour garder la même URL.
 
