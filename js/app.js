@@ -335,7 +335,7 @@
   function demarrer(apres) {
     aller("chargement");
     chargerDonnees()
-      .then(() => (apres ? apres() : aller("accueil")))
+      .then(() => { synchroniser(); return apres ? apres() : aller("accueil"); })
       .catch((e) => {
         if (!e.code) return aller("erreur");
         const cleRefusee = !!P.cle; // une clé enregistrée mais refusée est fausse : on l'oublie
@@ -410,6 +410,7 @@
         <button data-go="frise"><span class="ico">⏳</span>Frise<span class="sub">${plural(D.frise.length, "date")}</span></button>
         <button data-action="erreurs" ${nbErr ? "" : "disabled"}><span class="ico">🩹</span>Mes erreurs<span class="sub">${nbErr ? plural(nbErr, "à revoir", "à revoir") : "Aucune 👌"}</span></button>
         <button data-go="badges"><span class="ico">🏅</span>Badges<span class="sub">${nbBadges} débloqué${nbBadges > 1 ? "s" : ""}</span></button>
+        ${scriptUrl() && P.cle ? `<button data-action="onglet" data-onglet="eleves" class="wide"><span class="ico" style="font-size:1.4rem">📈</span> Résultats des élèves</button>` : ""}
         <button data-go="parent" class="wide btn-ghost"><span>📊</span> Statistiques</button>
       </div>`;
     },
@@ -546,7 +547,7 @@
       const onglet = vue.onglet || "suivi";
       const tabs = [["suivi", "📊 Suivi"]]
         .concat(estParent() ? [["ajouter", "➕ Ajouter"], ["qualite", "🔎 Qualité"]] : [])
-        .concat(scriptUrl() && P.cle ? [["partager", "🔗 Partager"]] : [])
+        .concat(scriptUrl() && P.cle ? [["eleves", "📈 Élèves"], ["partager", "🔗 Partager"]] : [])
         .concat([["reglages", "⚙️ Réglages"]]);
       return `${retour()}<h1>Statistiques</h1>
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${k === onglet ? "on" : ""}" data-action="onglet" data-onglet="${k}">${l}</button>`).join("")}</div>
@@ -644,6 +645,92 @@
           <div class="small muted">✅ ${esc(x.q.bonne)} · ❌ ${x.q.pieges.map(esc).join(" · ")}</div>
           ${x.w.map((w) => `<div class="warn">${esc(w)}</div>`).join("")}</div>`).join("") : `<div class="ok">👌 Aucun problème détecté sur les ${D.quiz.length} questions.</div>`}
         <p class="hint">Pour corriger, modifiez directement la ligne dans le Google Sheet puis rechargez les données (⚙️ Réglages).</p></div>`;
+    },
+
+    // Résultats envoyés par les appareils invités (onglets « Résultats » et « Historique » du Sheet).
+    eleves: () => {
+      if (!vue.resultats && !vue.chargeRes) {
+        vue.chargeRes = true;
+        envoyer({ action: "resultats" })
+          .then((r) => { vue.resultats = r; render(); })
+          .catch((e) => { vue.resultats = { eleves: [], historique: [], erreur: e.message }; render(); });
+      }
+      const R = vue.resultats;
+      if (!R) return `<div class="card"><p class="muted">Chargement des résultats…</p></div>`;
+      if (R.erreur) return `<div class="card"><div class="warn">${esc(R.erreur)}</div>
+        <p class="hint">Si vous venez de modifier le script Google, vérifiez que la nouvelle version est bien déployée (Déployer > Gérer les déploiements > Nouvelle version).</p></div>`;
+      if (!R.eleves.length) return `<div class="card center stack"><div style="font-size:2.5rem">📭</div>
+        <p>Aucun résultat pour l'instant.</p><p class="small muted">Les résultats d'un élève apparaissent ici dès qu'il termine une partie avec son lien d'invitation.</p></div>`;
+
+      const e = R.eleves.find((x) => x.code === vue.eleve) || R.eleves[0];
+      const parties = R.historique.filter((h) => h.code === e.code);
+      const matieresEl = Object.entries(e.matieres || {})
+        .filter(([, s]) => s && s.total)
+        .map(([m, s]) => ({ m, pct: Math.round(s.ok / s.total * 100), total: s.total }))
+        .sort((a, b) => a.pct - b.pct);
+      const faibles = matieresEl.filter((x) => x.total >= 5 && x.pct < 50);
+
+      // Activité des 14 derniers jours : questions répondues par jour (d'après l'historique).
+      const jours = [];
+      for (let k = 13; k >= 0; k--) {
+        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - k);
+        jours.push({ d, q: 0, ok: 0 });
+      }
+      parties.forEach((p) => {
+        const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(p.date);
+        if (!m) return;
+        const t = new Date(+m[3], +m[2] - 1, +m[1]).getTime();
+        const j = jours.find((x) => x.d.getTime() === t);
+        if (j) { j.q += p.total; j.ok += p.bons; }
+      });
+      const max = Math.max(1, ...jours.map((j) => j.q));
+      const fmtJour = (d) => d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+      return `
+        ${R.eleves.length > 1 ? `<div class="tabs">${R.eleves.map((x) => `<button class="${x.code === e.code ? "on" : ""}" data-action="voir-eleve" data-code="${esc(x.code)}">${esc(x.nom || x.prenom)}</button>`).join("")}</div>` : ""}
+        <div class="card stack">
+          <div class="row"><h2 style="margin:0">${esc(e.nom || e.prenom)}</h2><span class="spacer"></span>
+            <button class="btn-ghost small" data-action="maj-resultats" aria-label="Actualiser">🔄</button></div>
+          <div class="small muted" style="margin-top:-6px">Dernière activité : ${esc(e.activite || "—")}${e.prenom && e.prenom !== e.nom ? ` · se présente comme « ${esc(e.prenom)} »` : ""}</div>
+          <div class="tiles">
+            <div class="tile"><div class="tile-val">${esc(e.reussite || "–")}</div><div class="tile-lab">de réussite</div></div>
+            <div class="tile"><div class="tile-val">${e.parties}</div><div class="tile-lab">parties · ${e.repondues} réponses</div></div>
+            <div class="tile"><div class="tile-val">${e.serie} 🔥</div><div class="tile-lab">jours d'affilée</div></div>
+            <div class="tile"><div class="tile-val">${esc(String(e.niveau).split(" · ")[0] || "–")}</div><div class="tile-lab">niveau · ${e.xp} XP</div></div>
+          </div>
+          <p style="margin:0">${faibles.length
+            ? `⚠️ <strong>À retravailler :</strong> ${faibles.map((x) => `${esc(x.m)} (${x.pct} %)`).join(", ")}`
+            : matieresEl.length ? "👍 Aucun point faible repéré pour l'instant." : ""}</p>
+          <div class="small muted">${e.erreurs} question${e.erreurs > 1 ? "s" : ""} ratée${e.erreurs > 1 ? "s" : ""} à revoir · ${e.badges} badge${e.badges > 1 ? "s" : ""} · ${e.fiches} fiche${e.fiches > 1 ? "s" : ""} maîtrisée${e.fiches > 1 ? "s" : ""}</div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Réussite par matière</h3>
+          ${matieresEl.length ? matieresEl.map((x) => `<div class="barrow">
+            <div class="barrow-lab">${x.m === "Dates (frise)" ? "⏳" : emoji(x.m)} ${esc(x.m)}</div>
+            <div class="bar-track" role="img" aria-label="${esc(x.m)} : ${x.pct} % de réussite sur ${x.total} réponses"><span class="bar-fill" style="width:${x.pct}%"></span></div>
+            <div class="barrow-val"><strong>${x.pct} %</strong> <span class="muted small">· ${x.total} rép.</span>${x.total >= 5 && x.pct < 50 ? ` <span class="small" style="color:var(--warn)">⚠️</span>` : ""}</div>
+          </div>`).join("") : `<p class="muted small">Pas encore de réponses.</p>`}
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Questions répondues sur 14 jours</h3>
+          <div class="chart14" role="group" aria-label="Questions répondues par jour sur les 14 derniers jours">
+            <span class="chart14-max small muted">${max > 1 ? max : ""}</span>
+            ${jours.map((j) => `<button class="col14" data-action="tip14" data-tip="${esc(fmtJour(j.d))} : ${j.q ? `${j.q} questions, ${j.ok} bonnes réponses` : "aucune partie"}" aria-label="${esc(fmtJour(j.d))} : ${j.q} questions">
+              <span class="bar14 ${j.q ? "" : "zero"}" style="height:${j.q ? Math.max(4, j.q / max * 100) : 0}%"></span></button>`).join("")}
+          </div>
+          <div class="axis14 small muted">${jours.map((j, i) => `<span>${i === 13 ? "auj." : i % 2 === 1 ? j.d.toLocaleDateString("fr-FR", { weekday: "narrow" }).toUpperCase() : ""}</span>`).join("")}</div>
+          <div id="tip14" class="small muted" style="min-height:1.5em;margin-top:6px"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Dernières parties</h3>
+          ${parties.length ? `<table><thead><tr><th>Date</th><th>Matières</th><th class="num">Score</th></tr></thead><tbody>
+            ${parties.slice(-10).reverse().map((p) => `<tr><td class="small">${esc(p.date)}</td><td class="small">${esc(p.matieres)}</td>
+              <td class="num"><strong>${p.bons}/${p.total}</strong></td></tr>`).join("")}</tbody></table>`
+          : `<p class="muted small">Aucune partie enregistrée.</p>`}
+        </div>`;
     },
 
     partager: () => {
@@ -797,7 +884,12 @@
     if (P.serie.jours >= 7) gagner("jours7");
     if ((P.rattrapees || 0) >= 10) gagner("rattrapage");
     if (niveau(P.xp).n >= 6) gagner("niveau5");
+    P.envois = (P.envois || []).concat({
+      date: horodatage(new Date()), bons: quiz.bons, total,
+      matieres: [...new Set(quiz.questions.map((q) => (q.type ? "Dates" : q.matiere)))].join(", ")
+    }).slice(-50);
     save();
+    synchroniser();
     quiz.resultat = { bons: quiz.bons, total, xp: quiz.xp, erreurs: quiz.erreurs, niveauUp: niveau(P.xp).n > avant, nouveauxBadges: quiz.badgesEnCours || [] };
     aller("resultat");
     if (quiz.bons === total || quiz.resultat.niveauUp) confetti(90);
@@ -808,6 +900,31 @@
     const b = BADGES.find((x) => x.id === id);
     if (quiz && vue.nom === "quiz") quiz.badgesEnCours = (quiz.badgesEnCours || []).concat(b);
     toast("🏅 Badge débloqué : " + b.nom);
+  }
+  // Format « 13/10/2026 17:05 », le même que celui du script.
+  function horodatage(d) {
+    const z = (n) => String(n).padStart(2, "0");
+    return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${d.getFullYear()} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  }
+  // Envoie au script le résumé de progression et les parties en attente (invités seulement).
+  // En cas d'échec (hors ligne…), les parties restent dans P.envois et repartent la fois suivante.
+  let synchroEnCours = false;
+  function synchroniser() {
+    if (!scriptUrl() || P.cle || !ACCES.code || synchroEnCours) return;
+    const envoyees = (P.envois || []).length;
+    const stats = Object.values(P.stats || {});
+    const nv = niveau(P.xp);
+    synchroEnCours = true;
+    envoyer({
+      action: "resultat", code: ACCES.code, appareil: ACCES.appareil, parties: (P.envois || []).slice(0, envoyees),
+      resume: {
+        prenom: P.prenom, xp: P.xp, niveau: nv.n + " · " + nv.nom, parties: P.quizFaits, repondues: P.repondues,
+        bonnes: stats.reduce((s, x) => s + (x.ok || 0), 0), serie: serieActuelle(), erreurs: Object.keys(P.erreurs).length,
+        badges: Object.keys(P.badges).length, fiches: Object.keys(P.maitrise).length, matieres: P.stats
+      }
+    }).then(() => { P.envois = (P.envois || []).slice(envoyees); save(); })
+      .catch(() => { /* on réessaiera */ })
+      .finally(() => { synchroEnCours = false; });
   }
   function serieActuelle() {
     const hier = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
@@ -908,6 +1025,9 @@
       const depuisParent = vue.nom === "parent";
       demarrer(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); });
     }
+    else if (a === "voir-eleve") { vue.eleve = el.dataset.code; render(); }
+    else if (a === "maj-resultats") { vue.resultats = null; vue.chargeRes = false; render(); }
+    else if (a === "tip14") afficherTip14(el);
     else if (a === "copier-lien") {
       navigator.clipboard.writeText(el.dataset.lien).then(() => toast("📋 Lien copié"), () => toast("Copie impossible : sélectionnez le lien à la main"));
     }
@@ -945,6 +1065,19 @@
       }).catch((e) => { toast("❌ " + e.message, 6000); render(); });
     }
   });
+
+  // Graphique d'activité : la valeur du jour s'affiche au survol, au focus clavier ou au toucher.
+  function afficherTip14(col) {
+    const t = document.getElementById("tip14");
+    if (!t) return;
+    t.textContent = col.dataset.tip;
+    document.querySelectorAll(".col14.on").forEach((c) => c.classList.remove("on"));
+    col.classList.add("on");
+  }
+  ["mouseover", "focusin"].forEach((type) => document.addEventListener(type, (ev) => {
+    const col = ev.target.closest && ev.target.closest(".col14");
+    if (col) afficherTip14(col);
+  }));
 
   document.addEventListener("change", (ev) => {
     const el = ev.target;

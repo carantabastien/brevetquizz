@@ -137,6 +137,25 @@ button:disabled { opacity: .5; cursor: default; }
 .tl-item::before { content: ""; position: absolute; left: -20px; top: 6px; width: 11px; height: 11px; border-radius: 50%; background: var(--primary); }
 .tl-year { font-weight: 800; color: var(--primary); }
 
+/* Résultats des élèves */
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 560px) { .tiles { grid-template-columns: repeat(4, 1fr); } }
+.tile { background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+.tile-val { font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
+.tile-lab { font-size: .8rem; color: var(--muted); }
+.barrow { display: grid; grid-template-columns: minmax(90px, 34%) 1fr auto; gap: 10px; align-items: center; padding: 6px 0; }
+.barrow-lab { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--primary); border-radius: 99px; }
+.barrow-val { font-size: .9rem; text-align: right; white-space: nowrap; }
+.chart14 { position: relative; display: flex; align-items: flex-end; gap: 2px; height: 120px; border-bottom: 1px solid var(--line); padding-top: 16px; }
+.chart14-max { position: absolute; top: 0; left: 0; }
+.col14 { flex: 1; height: 100%; min-height: 0; padding: 0; border: 0; background: transparent; border-radius: 4px 4px 0 0; display: flex; align-items: flex-end; cursor: pointer; }
+.col14:hover, .col14.on, .col14:focus-visible { background: var(--primary-soft); }
+.bar14 { display: block; width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; }
+.axis14 { display: flex; gap: 2px; margin-top: 4px; }
+.axis14 > span { flex: 1; text-align: center; }
+
 /* Badges */
 .badge { text-align: center; padding: 14px 8px; }
 .badge .ico { font-size: 2.2rem; }

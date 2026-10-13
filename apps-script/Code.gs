@@ -23,7 +23,10 @@ const ONGLETS = {
   Quiz: ['Matière', 'Thème', 'Question', 'Bonne réponse', 'Mauvaise réponse 1', 'Mauvaise réponse 2', 'Mauvaise réponse 3', 'Explication'],
   Fiches: ['Matière', 'Thème', 'Fiche', 'Point à retenir'],
   Frise: ['Thème', 'Année', 'Événement'],
-  'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut']
+  'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut'],
+  'Résultats': ['Code', 'Nom', 'Prénom saisi', 'Dernière activité', 'XP', 'Niveau', 'Parties', 'Réponses', 'Réussite',
+    'Série (jours)', 'Erreurs à revoir', 'Badges', 'Fiches maîtrisées', 'Détail par matière'],
+  'Historique': ['Date', 'Code', 'Nom', 'Matières', 'Bonnes réponses', 'Questions', 'Réussite']
 };
 // Colonnes de l'onglet Accès (base 0)
 const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6 };
@@ -69,6 +72,13 @@ function doPost(e) {
       }
       return json_({ ok: true, parent: parent, quiz: lire_(ss, 'Quiz'), fiches: lire_(ss, 'Fiches'), frise: lire_(ss, 'Frise') });
     }
+    // Un invité envoie le résumé de sa progression et ses dernières parties (à la fin de chaque partie).
+    if (req.action === 'resultat') {
+      const refus = verifierInvitation_(ss, req.code, req.appareil);
+      if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
+      enregistrerResultat_(ss, String(req.code), req.resume || {}, req.parties || []);
+      return json_({ ok: true });
+    }
 
     if (!parent) return json_({ ok: false, code: 'cle', erreur: 'Clé secrète incorrecte' });
     switch (req.action) {
@@ -82,6 +92,8 @@ function doPost(e) {
         return json_(creerInvitation_(ss, req.nom));
       case 'invitations':
         return json_({ ok: true, invitations: listerInvitations_(ss) });
+      case 'resultats':
+        return json_(lireResultats_(ss));
       case 'revoquer':
         return json_(modifierInvitation_(ss, req.code, function (l) { l[A.statut] = 'révoqué'; }));
       case 'reactiver':
@@ -158,6 +170,48 @@ function modifierInvitation_(ss, code, modif) {
   return { ok: false, erreur: 'Invitation introuvable' };
 }
 
+function nomInvitation_(ss, code) {
+  const l = ss.getSheetByName('Accès').getDataRange().getDisplayValues().find(function (x) { return x[A.code] === code; });
+  return l ? l[A.nom] : '';
+}
+
+/** Met à jour la ligne de l'élève dans « Résultats » et ajoute ses parties dans « Historique ». */
+function enregistrerResultat_(ss, code, r, parties) {
+  const nom = nomInvitation_(ss, code);
+  const pct = function (ok, total) { return total ? Math.round(ok / total * 100) + ' %' : ''; };
+  const ligne = [code, nom, String(r.prenom || ''), horodatage_(), String(r.xp || 0), String(r.niveau || ''),
+    String(r.parties || 0), String(r.repondues || 0), pct(r.bonnes || 0, r.repondues || 0), String(r.serie || 0),
+    String(r.erreurs || 0), String(r.badges || 0), String(r.fiches || 0), JSON.stringify(r.matieres || {})];
+  const sh = ss.getSheetByName('Résultats');
+  const codes = sh.getDataRange().getDisplayValues().map(function (l) { return l[0]; });
+  const i = codes.indexOf(code);
+  const numero = i > 0 ? i + 1 : sh.getLastRow() + 1;
+  sh.getRange(numero, 1, 1, ligne.length).setNumberFormat('@').setValues([ligne]);
+
+  const lignes = (parties || []).slice(0, 50).map(function (p) {
+    return [String(p.date || horodatage_()), code, nom, String(p.matieres || ''), String(p.bons || 0), String(p.total || 0), pct(p.bons || 0, p.total || 0)];
+  });
+  if (lignes.length) {
+    const h = ss.getSheetByName('Historique');
+    h.getRange(h.getLastRow() + 1, 1, lignes.length, 7).setNumberFormat('@').setValues(lignes);
+  }
+}
+
+function lireResultats_(ss) {
+  const res = ss.getSheetByName('Résultats').getDataRange().getDisplayValues().slice(1).filter(function (l) { return l[0]; });
+  const eleves = res.map(function (l) {
+    let detail = {};
+    try { detail = JSON.parse(l[13] || '{}'); } catch (e) { /* cellule modifiée à la main */ }
+    return { code: l[0], nom: l[1], prenom: l[2], activite: l[3], xp: +l[4] || 0, niveau: l[5], parties: +l[6] || 0,
+      repondues: +l[7] || 0, reussite: l[8], serie: +l[9] || 0, erreurs: +l[10] || 0, badges: +l[11] || 0, fiches: +l[12] || 0, matieres: detail };
+  });
+  const historique = ss.getSheetByName('Historique').getDataRange().getDisplayValues().slice(1)
+    .filter(function (l) { return l[1]; })
+    .slice(-500)
+    .map(function (l) { return { date: l[0], code: l[1], matieres: l[3], bons: +l[4] || 0, total: +l[5] || 0 }; });
+  return { ok: true, eleves: eleves, historique: historique };
+}
+
 /** Lit un onglet tel qu'affiché (pas de conversion en nombre ou en date), sans les lignes vides. */
 function lire_(ss, onglet) {
   const sh = ss.getSheetByName(onglet);
@@ -172,7 +226,7 @@ function horodatage_() {
 }
 
 function ajouter_(ss, onglet, lignes) {
-  if (!ONGLETS[onglet] || onglet === 'Accès') throw new Error('Onglet inconnu : ' + onglet);
+  if (['Quiz', 'Fiches', 'Frise'].indexOf(onglet) < 0) throw new Error('Onglet inconnu : ' + onglet);
   const sh = ss.getSheetByName(onglet);
   const nbCol = ONGLETS[onglet].length;
   const propres = (lignes || [])
