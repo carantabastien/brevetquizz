@@ -5,7 +5,7 @@ Le contenu vient d'un **Google Sheet** que le parent complète au fil des cours.
 
 ## Ce que fait l'app
 
-- **Nouvelle partie** : on coche une ou plusieurs matières parmi les 17 matières de 3e (plus les dates), et on choisit 5, 10, 15 ou 20 questions. Les questions sont réparties équitablement entre les matières. Les questions déjà vues **ne reviennent pas** tant que tout n'a pas été fait.
+- **Nouvelle partie** : on coche une ou plusieurs matières parmi les 12 matières (français, maths, histoire, géographie, EMC, physique-chimie, SVT, technologie, anglais, espagnol, allemand, italien) et les dates, et on choisit 5, 10, 15 ou 20 questions. Les questions sont réparties équitablement entre les matières. Les questions déjà vues **ne reviennent pas** tant que tout n'a pas été fait.
 - **Quiz des dates** généré à partir de l'onglet Frise : « En quelle année… ? » et « Que s'est-il passé en… ? », avec des pièges tirés d'années proches.
 - **Mes erreurs** : les questions ratées reviennent dans un mode « revanche » jusqu'à ce qu'elles soient réussies.
 - **Fiches** par matière, avec un bouton « Je maîtrise ». Après une erreur, l'app propose la fiche correspondante.

@@ -15,22 +15,18 @@
     "Maths": ["#2563eb", "📐"], "Français": ["#db2777", "📖"], "Histoire": ["#b45309", "🏛️"],
     "Géographie": ["#059669", "🌍"], "EMC": ["#7c3aed", "⚖️"], "Physique-Chimie": ["#0891b2", "⚗️"],
     "SVT": ["#65a30d", "🧬"], "Technologie": ["#475569", "⚙️"], "Anglais": ["#dc2626", "🇬🇧"],
-    "Espagnol": ["#ea580c", "🇪🇸"], "Allemand": ["#ca8a04", "🇩🇪"], "Italien": ["#16a34a", "🇮🇹"],
-    "Latin": ["#92400e", "🏺"], "Grec": ["#1d4ed8", "📜"], "Arts plastiques": ["#c026d3", "🎨"],
-    "Éducation musicale": ["#e11d48", "🎵"], "EPS": ["#0d9488", "⚽"]
+    "Espagnol": ["#ea580c", "🇪🇸"], "Allemand": ["#ca8a04", "🇩🇪"], "Italien": ["#16a34a", "🇮🇹"]
   };
-  // Toutes les matières enseignées en 3e (langues et options comprises), dans l'ordre d'affichage.
+  // Matières révisées, dans l'ordre d'affichage (affichées même sans question).
   const MATIERES_3E = ["Français", "Maths", "Histoire", "Géographie", "EMC", "Physique-Chimie", "SVT", "Technologie",
-    "Anglais", "Espagnol", "Allemand", "Italien", "Latin", "Grec", "Arts plastiques", "Éducation musicale", "EPS"];
+    "Anglais", "Espagnol", "Allemand", "Italien"];
   // Autres façons d'écrire une matière dans le Sheet → nom officiel ci-dessus.
   const ALIAS_MATIERES = {
     "math": "Maths", "mathematiques": "Maths", "mathematique": "Maths",
     "physique": "Physique-Chimie", "physique chimie": "Physique-Chimie", "pc": "Physique-Chimie",
     "sciences de la vie et de la terre": "SVT", "techno": "Technologie",
     "education morale et civique": "EMC", "enseignement moral et civique": "EMC",
-    "geo": "Géographie", "lv1 anglais": "Anglais", "grec ancien": "Grec",
-    "arts": "Arts plastiques", "musique": "Éducation musicale",
-    "education physique et sportive": "EPS", "sport": "EPS"
+    "geo": "Géographie", "lv1 anglais": "Anglais"
   };
   const NIVEAUX = [
     [0, "Débutant"], [100, "Apprenti"], [250, "Élève motivé"], [500, "Bûcheur"], [850, "Solide"],
