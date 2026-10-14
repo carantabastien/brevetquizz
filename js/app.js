@@ -589,7 +589,8 @@
         <div class="stars">${"⭐".repeat(etoiles)}${"☆".repeat(3 - etoiles)}</div>
         <div class="big-score">${r.bons}/${r.total}</div>
         <p>${msg}</p>
-        ${!d && peutDefier() && SOCIAL && SOCIAL.amis && SOCIAL.amis.length ? `<button class="btn-defier btn-big" data-action="defier">⚔️ Défier un ami avec ce score</button>` : ""}
+        ${!d && peutDefier() ? `<button class="btn-defier btn-big" data-action="defier">⚔️ Défier un ami avec ce score</button>` : ""}
+        ${!d && scriptUrl() && P.cle ? `<p class="small muted" style="margin:0">⚔️ Les défis se lancent depuis l'app d'un élève invité, pas depuis le compte parent.</p>` : ""}
         <p><strong>+${r.xp} XP</strong>${r.niveauUp ? ` · 🎉 Niveau ${niveau(P.xp).n} atteint : ${esc(niveau(P.xp).nom)} !` : ""}</p>
         ${r.nouveauxBadges.length ? `<div class="ok">Nouveau badge : ${r.nouveauxBadges.map((b) => b.ico + " " + esc(b.nom)).join(", ")}</div>` : ""}
         ${r.erreurs ? `<p class="small muted">${plural(r.erreurs, "erreur")} ajoutée${r.erreurs > 1 ? "s" : ""} à « Mes erreurs » pour la revanche.</p>` : ""}
@@ -1075,10 +1076,15 @@
   const socialPossible = () => !!scriptUrl() && (!!ACCES.code || !!P.cle);
   const peutDefier = () => !!scriptUrl() && !!ACCES.code && !P.cle;
   const nonLues = () => (SOCIAL && SOCIAL.notifs ? SOCIAL.notifs.filter((n) => n.t > (P.notifsVues || 0)).length : 0);
-  let socialEnCours = false;
-  async function chargerSocial() {
-    if (!socialPossible() || socialEnCours) return;
-    socialEnCours = true;
+  // Un seul chargement à la fois : un appel pendant un chargement en cours attend le même résultat.
+  let socialPromesse = null;
+  let socialErreur = "";
+  function chargerSocial() {
+    if (!socialPossible()) return Promise.resolve();
+    if (!socialPromesse) socialPromesse = chargerSocialMaintenant().finally(() => { socialPromesse = null; });
+    return socialPromesse;
+  }
+  async function chargerSocialMaintenant() {
     try {
       await envoyerReponsesDefis();
       const avant = nonLues();
@@ -1088,9 +1094,10 @@
       if (apres > avant && document.hidden && "Notification" in window && Notification.permission === "granted") {
         try { new Notification("BrevetQuizz", { body: texteNotif(SOCIAL.notifs[0]), icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" }); } catch (e) { /* non supporté */ }
       }
+      socialErreur = "";
       majPastille();
-      if (["accueil", "notifs", "profil"].includes(vue.nom)) render();
-    } catch (e) { /* hors ligne : on réessaiera */ } finally { socialEnCours = false; }
+      if (["accueil", "notifs", "profil", "resultat"].includes(vue.nom)) render();
+    } catch (e) { socialErreur = e.message || "Connexion impossible"; /* on réessaiera */ }
   }
   function majPastille() {
     const p = document.getElementById("pastille");
@@ -1146,14 +1153,24 @@
     fermerModale();
     aller("quiz");
   }
-  function ouvrirDefier() {
-    const amis = (SOCIAL && SOCIAL.amis) || [];
+  async function ouvrirDefier() {
     const m = document.getElementById("modal");
+    if (!SOCIAL) { // la liste des amis n'est pas encore chargée : on la charge d'abord
+      m.innerHTML = `<div class="sheet center"><p class="muted">Chargement de tes amis…</p></div>`;
+      m.hidden = false;
+      await chargerSocial();
+      if (!SOCIAL) {
+        m.innerHTML = `<div class="sheet stack center"><p>Impossible de charger tes amis${socialErreur ? ` (${esc(socialErreur)})` : ""}.</p>
+          <p class="small muted" style="margin:0">Vérifie ta connexion internet et réessaie.</p><button data-action="fermer">Fermer</button></div>`;
+        return;
+      }
+    }
+    const amis = SOCIAL.amis || [];
     m.innerHTML = `<form class="sheet stack" data-form="defier">
       <div class="row"><h2 style="margin:0">⚔️ Défier un ami</h2><span class="spacer"></span><button type="button" class="btn-ghost" data-action="fermer" aria-label="Fermer">✕</button></div>
       <p class="small muted" style="margin:0">Ton ami rejouera exactement les mêmes ${quiz.questions.length} questions. Il doit battre ton ${quiz.bons}/${quiz.questions.length}.</p>
       ${amis.length ? amis.map((a) => `<label class="ami-choix">${avatar(a.nom)}<span style="flex:1">${esc(a.nom)}</span><input type="checkbox" name="ami" value="${esc(a.id)}"></label>`).join("")
-        : `<p class="muted">Aucun ami pour l'instant. Demande au parent de créer des invitations.</p>`}
+        : `<p class="muted">Personne d'autre n'est encore invité. Demande au parent de créer une invitation pour tes amis (Profil > Statistiques > Partager).</p>`}
       ${amis.length ? `<button class="btn-primary btn-big">Envoyer le défi 🔥</button>` : ""}
     </form>`;
     m.hidden = false;
