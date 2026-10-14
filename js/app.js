@@ -558,7 +558,9 @@
         <span class="small muted">${quiz.i + 1}/${quiz.questions.length}</span>
       </div>
       ${quiz.cycle && quiz.i === 0 && !fini ? `<p class="ok">🔄 Tu as vu toutes les questions de cette sélection : nouveau tour !</p>` : ""}
-      ${quiz.i === 0 && !fini ? `<p class="warn">📵 Reste dans l'app : si tu la quittes pendant une question, ta réponse sera comptée fausse.</p>` : ""}
+      ${quiz.i === 0 && !fini ? `<p class="warn">📵 Reste dans l'app : ${quiz.defi
+        ? "en défi, si tu la quittes pendant une question, ta réponse est comptée fausse."
+        : "si tu la quittes pendant une question, elle est remplacée la 1re fois (un appel, ça arrive), puis comptée fausse."}</p>` : ""}
       <div class="card ${fini && !ok ? "shake" : ""}">
         <span class="tag" style="background:${couleur(q.matiere)}22;color:${couleur(q.matiere)}">${emoji(q.matiere)} ${esc(q.matiere)}${q.theme ? " · " + esc(q.theme) : ""}</span>
         <div class="question">${esc(q.question)}</div>
@@ -1007,10 +1009,25 @@
     sortieDepuis = 0;
     // Tolérance de 1,5 s (clic hors de la page, petite fenêtre système…)
     if (duree < 1500 || vue.nom !== "quiz" || !quiz || quiz.repondu != null) return;
+    const m = document.getElementById("modal");
+    // Joker : 1re sortie de la partie (appel, notification…) = question remplacée, sans pénalité.
+    // Pas de joker en défi : les deux joueurs doivent avoir exactement les mêmes questions.
+    if (!quiz.defi && !quiz.jokerUtilise) {
+      quiz.jokerUtilise = true;
+      if (!remplacerQuestion()) return;
+      render();
+      m.innerHTML = `<div class="sheet stack center" role="alertdialog" aria-label="Question remplacée">
+        <div style="font-size:3rem">📞</div>
+        <h2 style="margin:0">Tu as quitté l'app pendant la question</h2>
+        <p style="margin:0">Pas de pénalité cette fois (un appel, ça arrive !) : la question a été <strong>remplacée</strong> par une autre.</p>
+        <p class="warn" style="margin:0">⚠️ Si tu quittes encore l'app pendant cette partie, la question sera comptée fausse.</p>
+        <button class="btn-primary btn-big" data-action="fermer">OK, je reste</button></div>`;
+      m.hidden = false;
+      return;
+    }
     quiz.triches = (quiz.triches || 0) + 1;
     P.triches = (P.triches || 0) + 1;
     enregistrerReponse(TRICHE);
-    const m = document.getElementById("modal");
     m.innerHTML = `<div class="sheet stack center" role="alertdialog" aria-label="Sortie de l'app détectée">
       <div style="font-size:3rem">🚫</div>
       <h2 style="margin:0">Tu as quitté l'app pendant la question</h2>
@@ -1018,6 +1035,22 @@
       <p class="defi-titre" style="color:var(--primary);margin:4px 0">${MESSAGES_TRICHE[(P.triches - 1) % MESSAGES_TRICHE.length]}</p>
       <button class="btn-primary btn-big" data-action="fermer">J'ai compris</button></div>`;
     m.hidden = false;
+  }
+  // Remplace la question en cours par une autre de la même matière, jamais vue de préférence.
+  // La question abandonnée est marquée vue : elle ne revient pas tout de suite.
+  function remplacerQuestion() {
+    const q = quiz.questions[quiz.i];
+    P.vues[q.id] = 1; save();
+    const deja = new Set(quiz.questions.map((x) => x.id));
+    const pool = q.type ? questionsFrise() : D.quiz.filter((x) => x.matiere === q.matiere);
+    const candidats = shuffle(pool.filter((x) => !deja.has(x.id)));
+    const nouvelle = candidats.find((x) => !P.vues[x.id]) || candidats[0];
+    if (nouvelle) { quiz.questions[quiz.i] = preparer(nouvelle); return true; }
+    // Plus aucune question disponible : on retire simplement celle-ci de la partie.
+    quiz.questions.splice(quiz.i, 1);
+    if (!quiz.questions.length) { aller("accueil"); toast("Partie annulée : plus de questions disponibles"); return false; }
+    if (quiz.i >= quiz.questions.length) { terminerQuiz(); return false; }
+    return true;
   }
   document.addEventListener("visibilitychange", () => (document.hidden ? debutSortie() : finSortie()));
   window.addEventListener("blur", debutSortie);
