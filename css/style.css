@@ -257,3 +257,4 @@ td.num, th.num { text-align: right; }
 .profil-stats span { font-size: .8rem; color: var(--muted); }
 .list-btn { border: 0; border-radius: 10px; background: none; }
 .post.liste .list-btn + .list-btn { border-top: 1px solid var(--line); border-radius: 0; }
+.partage-card { display: flex; align-items: center; gap: 12px; }

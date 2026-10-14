@@ -364,7 +364,8 @@
     ];
     return `<header class="topbar">
         <button class="logo" data-go="accueil">brevetquizz</button><span class="spacer"></span>
-        ${scriptUrl() && P.cle ? `<button class="iconbtn" data-action="onglet" data-onglet="eleves" aria-label="Résultats des élèves">📈</button>` : ""}
+        ${scriptUrl() && P.cle ? `<button class="iconbtn" data-action="onglet" data-onglet="partager" aria-label="Partager l'app">🔗</button>
+          <button class="iconbtn" data-action="onglet" data-onglet="eleves" aria-label="Résultats des élèves">📈</button>` : ""}
         ${peutDefier() ? `<button class="iconbtn" data-go="notifs" aria-label="Notifications${n ? ` (${n} nouvelles)` : ""}">🔔<span id="pastille" class="pastille" ${n ? "" : "hidden"}>${n > 9 ? "9+" : n}</span></button>` : ""}
       </header>
       ${contenu}
@@ -441,6 +442,11 @@
 
       return `
       <div class="stories" role="list" aria-label="Lancer une partie par matière">${stories.join("")}</div>
+      ${scriptUrl() && P.cle ? `<section class="post partage-card">
+        <div style="flex:1"><strong>🔗 Partager l'app</strong>
+          <div class="small muted">Crée un lien d'invitation personnel pour ton fils ou un de ses amis.</div></div>
+        <button class="btn-primary" data-action="onglet" data-onglet="partager">Inviter</button>
+      </section>` : ""}
       <section class="me-card">
         ${avatar(P.prenom)}
         <div style="flex:1;min-width:0">
