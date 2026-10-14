@@ -502,24 +502,24 @@ window.BQ_PACK = {
    "ligne": [
     "Maths",
     "Géométrie",
-    "Un triangle est rectangle. Les deux côtés de l'angle droit mesurent 6 cm et 8 cm. Combien mesure l'hypoténuse ?",
-    "10 cm",
-    "14 cm",
-    "12 cm",
-    "9 cm",
-    "Pythagore : hyp² = 6² + 8² = 36 + 64 = 100, donc hyp = √100 = 10 cm. (14 cm, c'est l'erreur d'additionner 6 + 8.)"
+    "Un triangle est rectangle. Les deux côtés de l'angle droit mesurent 3 cm et 4 cm. Combien mesure l'hypoténuse ?",
+    "5 cm",
+    "7 cm",
+    "25 cm",
+    "6 cm",
+    "Pythagore : hyp² = 3² + 4² = 9 + 16 = 25, donc hyp = √25 = 5 cm. 7 cm, c'est l'erreur d'additionner 3 + 4 ; 25 cm, c'est oublier la racine carrée."
    ]
   },
   {
    "ligne": [
     "Maths",
     "Géométrie",
-    "Dans le triangle ABC, AB = 5, BC = 12 et AC = 13. Que peut-on dire ?",
-    "ABC est rectangle en B",
-    "ABC est rectangle en A",
-    "ABC est rectangle en C",
-    "ABC est isocèle en B",
-    "Le plus grand côté est AC = 13. AC² = 169 et AB² + BC² = 25 + 144 = 169. D'après la réciproque de Pythagore, l'angle droit est en face de AC, donc en B."
+    "On connaît les trois côtés d'un triangle. Pour prouver qu'il est rectangle, on utilise :",
+    "la réciproque du théorème de Pythagore",
+    "le théorème de Pythagore",
+    "la réciproque du théorème de Thalès",
+    "le cosinus d'un angle",
+    "On vérifie que le carré du plus grand côté est égal à la somme des carrés des deux autres : c'est la réciproque de Pythagore. Le théorème de Pythagore, lui, sert à calculer une longueur quand on sait déjà que le triangle est rectangle."
    ]
   },
   {
@@ -634,24 +634,24 @@ window.BQ_PACK = {
    "ligne": [
     "Maths",
     "Nombres, statistiques et probabilités",
-    "Quel est le PGCD de 84 et 60 ?",
-    "12",
-    "6",
-    "24",
-    "4",
-    "84 = 2² × 3 × 7 et 60 = 2² × 3 × 5. Facteurs communs : 2² × 3 = 12."
+    "Lequel de ces nombres est un nombre premier ?",
+    "17",
+    "21",
+    "27",
+    "15",
+    "17 n'a que deux diviseurs : 1 et 17. Les autres se divisent par 3 : 21 = 3 × 7, 27 = 3 × 9 et 15 = 3 × 5."
    ]
   },
   {
    "ligne": [
     "Maths",
     "Nombres, statistiques et probabilités",
-    "Quelle est l'écriture scientifique de 0,00045 ?",
-    "4,5 × 10⁻⁴",
-    "4,5 × 10⁻³",
-    "4,5 × 10⁻⁵",
-    "4,5 × 10⁴",
-    "On décale la virgule de 4 rangs vers la droite pour obtenir 4,5 : le nombre est petit donc la puissance est négative → 4,5 × 10⁻⁴."
+    "Quelle est l'écriture scientifique de 5 000 ?",
+    "5 × 10³",
+    "5 × 10⁴",
+    "5 × 10²",
+    "5 × 10⁻³",
+    "5 000 = 5 × 1 000 = 5 × 10³ : la puissance de 10 correspond au nombre de zéros. Une puissance négative sert pour les nombres plus petits que 1."
    ]
   },
   {

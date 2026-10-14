@@ -8,6 +8,7 @@ App web de révision du brevet (3e) pour le fils de l'utilisateur. L'utilisateur
 3. **Le parent enrichit le contenu selon les cours** : tout le contenu vient du Google Sheet, et il peut ajouter depuis l'app (Statistiques > Ajouter).
 4. **Pas de questions répétées** : les questions vues sont mémorisées (`P.vues`) et ne reviennent qu'une fois tout le lot épuisé (« nouveau cycle »).
 5. **Pas de réponse trouvable par élimination** : les pièges doivent être proches de la bonne réponse (même forme, même longueur, dates voisines, notions voisines). `qualite()` dans `js/app.js` signale les cas douteux. Tout nouveau contenu écrit par Claude doit respecter ça.
+6. **Maths faisables de tête** (demande du parent, 14/10/2026) : l'élève n'a que son téléphone, ni papier ni calculatrice. Petits nombres, au plus une ou deux opérations simples, ou des questions de méthode et de formule. Pas de PGCD de grands nombres, ni de carrés comme 12² ou 13², ni de décimales longues. Les pièges reprennent les erreurs classiques (additionner au lieu d'appliquer Pythagore, oublier la racine…).
 
 ## Architecture
 - Site **statique** sans build ni dépendance : `index.html`, `css/style.css`, `js/config.js`, `js/app.js` (IIFE, vanilla JS), `js/pack.js`.
