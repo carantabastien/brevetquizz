@@ -71,6 +71,12 @@ Une fois l'URL du script inscrite dans `js/config.js` (`scriptUrl`), l'app passe
 
 **🏆 Classement** (bouton de l'accueil, visible par tous les invités) : élèves classés par taux de bonnes réponses, à partir de 20 réponses. Un élève qui en a moins apparaît dans « Pas encore classés ». Chacun ne voit des autres que le prénom de l'invitation, le pourcentage et le nombre de réponses. Une invitation désactivée sort du classement.
 
+**Style « Social »** : l'accueil ressemble à un réseau social. En haut, les matières en « stories » : une touche lance une partie, et l'anneau devient gris quand toutes les questions ont été vues. En dessous, le fil d'activité des amis. En bas, une barre de navigation avec le bouton ＋ pour une partie mélangée.
+
+**⚔️ Défis entre amis** : à la fin d'une partie, « Défier un ami avec ce score ». L'ami rejoue exactement les mêmes questions. Le défi lui arrive dans la 🔔 cloche de l'app (rafraîchie à l'ouverture et toutes les 2 minutes), et le bouton « Prévenir par message » permet de l'avertir tout de suite par WhatsApp ou SMS. Une fois le défi relevé, chacun voit le duel. On peut aussi dire ❤️ « Bravo » sur les parties des amis.
+
+*Limite* : pas de notification quand l'app est fermée. Ce type de notification demande un serveur dédié (par exemple Firebase), que le script Google ne peut pas remplacer.
+
 Pour que ce soit vraiment privé, passez le partage du Google Sheet en **« Accès restreint »**. Les questions ne sont alors plus lisibles que par le script.
 
 *Limites* : un invité peut toujours prêter son téléphone ou faire des captures d'écran. Le code de l'app et le pack de questions (`js/pack.js`) restent visibles sur GitHub, puisque le repo est public. Un invité hors ligne garde l'accès 7 jours au plus sans nouvelle vérification.

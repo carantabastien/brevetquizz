@@ -45,7 +45,8 @@
     { id: "fiches5", ico: "🧠", nom: "Mémoire d'éléphant", desc: "Maîtriser 5 fiches" },
     { id: "rattrapage", ico: "🩹", nom: "Revanche", desc: "Corriger 10 anciennes erreurs" },
     { id: "dates", ico: "⏳", nom: "Maître du temps", desc: "Faire un quiz de dates sans faute" },
-    { id: "niveau5", ico: "👑", nom: "Expert", desc: "Atteindre le niveau 6" }
+    { id: "niveau5", ico: "👑", nom: "Expert", desc: "Atteindre le niveau 6" },
+    { id: "defi", ico: "⚔️", nom: "Duelliste", desc: "Gagner un défi lancé par un ami" }
   ];
 
   // ───────────────────────── Utilitaires ─────────────────────────
@@ -335,7 +336,7 @@
   function demarrer(apres) {
     aller("chargement");
     chargerDonnees()
-      .then(() => { synchroniser(); return apres ? apres() : aller("accueil"); })
+      .then(() => { synchroniser().then(chargerSocial); return apres ? apres() : aller("accueil"); })
       .catch((e) => {
         if (!e.code) return aller("erreur");
         const cleRefusee = !!P.cle; // une clé enregistrée mais refusée est fausse : on l'oublie
@@ -347,10 +348,29 @@
   // ───────────────────────── Routage ─────────────────────────
   let vue = { nom: "accueil" };
   function aller(nom, params) { vue = Object.assign({ nom }, params || {}); render(); window.scrollTo(0, 0); }
+  // Vues affichées dans le cadre « social » : barre du haut + barre de navigation en bas.
+  const AVEC_CADRE = ["accueil", "fiches", "classement", "profil", "notifs", "frise"];
   function render() {
     const f = VUES[vue.nom] || VUES.accueil;
-    $app.innerHTML = f();
+    const html = f();
+    $app.innerHTML = AVEC_CADRE.includes(vue.nom) && P.prenom ? cadre(html) : html;
     if (VUES[vue.nom + "_apres"]) VUES[vue.nom + "_apres"]();
+  }
+  function cadre(contenu) {
+    const n = nonLues();
+    const onglets = [
+      ["accueil", "🏠", "Accueil"], ["fiches", "📘", "Fiches"], ["choix", "", "Jouer"],
+      scriptUrl() ? ["classement", "🏆", "Classement"] : ["frise", "⏳", "Frise"], ["profil", "👤", "Profil"]
+    ];
+    return `<header class="topbar">
+        <button class="logo" data-go="accueil">brevetquizz</button><span class="spacer"></span>
+        ${scriptUrl() && P.cle ? `<button class="iconbtn" data-action="onglet" data-onglet="eleves" aria-label="Résultats des élèves">📈</button>` : ""}
+        ${peutDefier() ? `<button class="iconbtn" data-go="notifs" aria-label="Notifications${n ? ` (${n} nouvelles)` : ""}">🔔<span id="pastille" class="pastille" ${n ? "" : "hidden"}>${n > 9 ? "9+" : n}</span></button>` : ""}
+      </header>
+      ${contenu}
+      <nav class="bottomnav" aria-label="Navigation">${onglets.map(([id, ico, lab]) => id === "choix"
+        ? `<button class="nav-plus" data-go="choix" aria-label="Nouvelle partie">＋</button>`
+        : `<button class="nav-item ${vue.nom === id ? "on" : ""}" data-go="${id}"><span class="nav-ico">${ico}</span><span>${lab}</span></button>`).join("")}</nav>`;
   }
   const retour = (cible, label) => `<button class="btn-ghost back" data-go="${cible || "accueil"}">← ${label || "Accueil"}</button>`;
 
@@ -386,34 +406,106 @@
       <form data-form="prenom" class="stack"><input name="prenom" placeholder="Ton prénom" maxlength="30" required autocomplete="given-name">
       <button class="btn-primary btn-big">C'est parti 🚀</button></form></div>`,
 
+    // Accueil « social » : stories des matières, défis reçus, fil d'activité des amis.
     accueil: () => {
       if (!P.prenom) return VUES.prenom();
       const nv = niveau(P.xp);
       const nbErr = Object.keys(P.erreurs).length;
-      const nbBadges = Object.keys(P.badges).length;
+      const court = (m) => ({ "Physique-Chimie": "Physique", "Technologie": "Techno", "Géographie": "Géo" }[m] || m);
+      const stories = [`<button class="story" data-go="choix"><span class="story-ring plus">＋</span><span class="story-lab">Mix</span></button>`]
+        .concat(matieres().filter((m) => poolDe(m).length).map((m) => {
+          const neuves = poolDe(m).some((q) => !P.vues[q.id]);
+          return `<button class="story" data-action="quiz" data-pool="${esc(m)}"><span class="story-ring ${neuves ? "" : "vue"}"><span class="story-in" style="background-image:linear-gradient(${couleur(m)}22,${couleur(m)}22)">${emoji(m)}</span></span><span class="story-lab">${esc(court(m))}</span></button>`;
+        }))
+        .concat(D.frise.length ? [`<button class="story" data-action="quiz" data-pool="#frise"><span class="story-ring ${questionsFrise().some((q) => !P.vues[q.id]) ? "" : "vue"}"><span class="story-in">⏳</span></span><span class="story-lab">Dates</span></button>`] : [])
+        .concat(nbErr ? [`<button class="story" data-action="erreurs"><span class="story-ring rouge"><span class="story-in">🩹</span></span><span class="story-lab">Erreurs</span></button>`] : []);
+
+      const defis = SOCIAL && SOCIAL.recus ? SOCIAL.recus.filter((d) => d.statut !== "relevé") : [];
+      const fil = SOCIAL && SOCIAL.fil ? SOCIAL.fil : [];
+      const item = (x) => x.type === "defi"
+        ? `<article class="post">
+            <div class="post-head"><span class="avatar" style="background:#D4537E">⚔️</span>
+              <div><strong>${esc(x.pour)}</strong> a relevé le défi de <strong>${esc(x.de)}</strong>
+              <div class="small muted">${esc(x.matieres)} · ${ilya(x.date)}</div></div></div>
+            <div class="duel"><span><strong>${x.score}/${x.total}</strong><br><span class="small muted">${esc(x.pour)}</span></span><span class="vs">VS</span><span><strong>${x.bons}/${x.total}</strong><br><span class="small muted">${esc(x.de)}</span></span></div>
+            <div class="small" style="text-align:center">${x.score > x.bons ? `🏆 ${esc(x.pour)} gagne !` : x.score === x.bons ? "🤝 Égalité !" : `🏆 ${esc(x.de)} garde la victoire !`}</div>
+          </article>`
+        : `<article class="post">
+            <div class="post-head">${avatar(x.nom)}
+              <div style="flex:1"><strong>${x.moi ? "Tu" : esc(x.nom)}</strong> ${x.moi ? "as fait" : "a fait"} <strong>${x.bons}/${x.total}</strong>${x.matieres ? ` en ${esc(x.matieres)}` : ""}${x.total && x.bons === x.total ? " 💯" : x.total && x.bons / x.total >= .8 ? " ⭐" : ""}
+              <div class="small muted">${ilya(x.date)}</div></div></div>
+            ${x.moi || !peutDefier()
+              ? (x.bravos ? `<div class="post-actions"><span class="small muted">❤️ ${plural(x.bravos, "bravo")}</span></div>` : "")
+              : `<div class="post-actions"><button class="bravo ${x.jaiDitBravo ? "on" : ""}" data-action="bravo" data-partie="${esc(x.id)}" ${x.jaiDitBravo ? "disabled" : ""}>${x.jaiDitBravo ? "❤️" : "🤍"} Bravo${x.bravos ? ` · ${x.bravos}` : ""}</button></div>`}
+          </article>`;
+
       return `
-      <section class="card hero">
-        <div class="row"><h1 style="margin:0">Salut ${esc(P.prenom)} 👋</h1></div>
-        <div class="muted">Niveau ${nv.n} · ${esc(nv.nom)}</div>
-        <div class="xpbar"><span style="width:${nv.pct}%"></span></div>
-        <div class="small muted">${P.xp} XP${nv.reste > 0 ? " · encore " + nv.reste + " XP pour le niveau suivant" : ""}</div>
-        <div class="pills">
-          <span class="pill">🔥 ${plural(serieActuelle(), "jour")} d'affilée</span>
-          <span class="pill">✅ ${plural(P.repondues, "réponse")}</span>
-          <span class="pill">🏅 ${nbBadges}/${BADGES.length} badges</span>
+      <div class="stories" role="list" aria-label="Lancer une partie par matière">${stories.join("")}</div>
+      <section class="me-card">
+        ${avatar(P.prenom)}
+        <div style="flex:1;min-width:0">
+          <div><strong>Salut ${esc(P.prenom)} 👋</strong></div>
+          <div class="small muted">Niveau ${nv.n} · ${esc(nv.nom)} · 🔥 ${plural(serieActuelle(), "jour")}</div>
+          <div class="xpbar"><span style="width:${nv.pct}%"></span></div>
         </div>
       </section>
-      ${D.horsLigne ? `<p class="warn">📴 Hors connexion : j'utilise les révisions chargées le ${D.charge.toLocaleDateString("fr-FR")}.</p>` : ""}
-      <div class="menu">
-        <button data-go="choix" class="wide btn-primary" style="color:#fff"><span class="ico">🎯</span> Nouvelle partie</button>
-        <button data-go="fiches"><span class="ico">📘</span>Fiches<span class="sub">${plural(D.fiches.length, "fiche")}</span></button>
-        <button data-go="frise"><span class="ico">⏳</span>Frise<span class="sub">${plural(D.frise.length, "date")}</span></button>
-        <button data-action="erreurs" ${nbErr ? "" : "disabled"}><span class="ico">🩹</span>Mes erreurs<span class="sub">${nbErr ? plural(nbErr, "à revoir", "à revoir") : "Aucune 👌"}</span></button>
-        <button data-go="badges"><span class="ico">🏅</span>Badges<span class="sub">${nbBadges} débloqué${nbBadges > 1 ? "s" : ""}</span></button>
-        ${scriptUrl() ? `<button data-go="classement" class="wide"><span class="ico" style="font-size:1.4rem">🏆</span> Classement</button>` : ""}
-        ${scriptUrl() && P.cle ? `<button data-action="onglet" data-onglet="eleves" class="wide"><span class="ico" style="font-size:1.4rem">📈</span> Résultats des élèves</button>` : ""}
-        <button data-go="parent" class="wide btn-ghost"><span>📊</span> Statistiques</button>
-      </div>`;
+      ${D.horsLigne ? `<p class="warn">📴 Hors connexion : révisions chargées le ${D.charge.toLocaleDateString("fr-FR")}.</p>` : ""}
+      ${defis.map((d) => `<article class="defi-card">
+          <div class="small" style="opacity:.9">🔥 Défi lancé par ${esc(d.de)} · ${ilya(d.date)}</div>
+          <div class="defi-titre">Bats son ${d.bons}/${d.total}${d.matieres ? ` en ${esc(d.matieres)}` : ""}</div>
+          <button class="defi-btn" data-action="relever" data-defi="${esc(d.id)}">Relever le défi</button>
+        </article>`).join("")}
+      ${socialPossible()
+        ? (SOCIAL ? (fil.length ? fil.map(item).join("")
+            : `<div class="post center"><div style="font-size:2rem">👋</div><p style="margin:4px 0">Le fil est encore vide.</p><p class="small muted" style="margin:0">Termine une partie : elle apparaîtra ici, et tes amis pourront te dire bravo.</p></div>`)
+          : `<div class="post center muted">Chargement du fil…</div>`)
+        : `<div class="post center"><p style="margin:0">Choisis une matière en haut pour lancer une partie, ou touche ＋ pour en mélanger plusieurs.</p></div>`}`;
+    },
+
+    // Profil : niveau, raccourcis, défis envoyés, statistiques.
+    profil: () => {
+      const nv = niveau(P.xp);
+      const nbErr = Object.keys(P.erreurs).length;
+      const nbBadges = Object.keys(P.badges).length;
+      const envoyes = SOCIAL && SOCIAL.envoyes ? SOCIAL.envoyes.slice().reverse().slice(0, 10) : [];
+      return `<section class="post center">
+          <div style="display:flex;justify-content:center">${avatar(P.prenom).replace('class="avatar"', 'class="avatar avatar-xl"')}</div>
+          <h2 style="margin:8px 0 0">${esc(P.prenom)}</h2>
+          <div class="small muted">Niveau ${nv.n} · ${esc(nv.nom)}</div>
+          <div class="xpbar" style="margin:10px auto;max-width:260px"><span style="width:${nv.pct}%"></span></div>
+          <div class="small muted">${P.xp} XP${nv.reste > 0 ? ` · encore ${nv.reste} XP pour le niveau suivant` : ""}</div>
+          <div class="profil-stats">
+            <div><strong>${serieActuelle()}</strong><span>jours 🔥</span></div>
+            <div><strong>${P.repondues}</strong><span>réponses</span></div>
+            <div><strong>${nbBadges}</strong><span>badges</span></div>
+          </div>
+        </section>
+        <div class="post liste">
+          <button class="list-btn" data-action="erreurs" ${nbErr ? "" : "disabled"}><span>🩹 Mes erreurs</span><span class="muted">${nbErr ? nbErr + " à revoir" : "aucune"} ›</span></button>
+          <button class="list-btn" data-go="badges"><span>🏅 Badges</span><span class="muted">${nbBadges}/${BADGES.length} ›</span></button>
+          <button class="list-btn" data-go="frise"><span>⏳ Frise chronologique</span><span class="muted">›</span></button>
+          <button class="list-btn" data-go="parent"><span>📊 Statistiques et réglages</span><span class="muted">›</span></button>
+        </div>
+        ${envoyes.length ? `<div class="post"><h3>⚔️ Mes défis envoyés</h3>
+          ${envoyes.map((d) => `<div class="row" style="padding:6px 0;border-top:1px solid var(--line)">${avatar(d.pour)}
+            <span style="flex:1">${esc(d.pour)} <span class="small muted">· ${esc(d.matieres)} · ton ${d.bons}/${d.total}</span></span>
+            <span class="small">${d.statut === "relevé" ? `${d.score}/${d.total} · ${d.score > d.bons ? "perdu" : d.score === d.bons ? "égalité" : "gagné 🏆"}` : "⏳ en attente"}</span></div>`).join("")}</div>` : ""}`;
+    },
+
+    // Notifications : défis reçus, défis relevés, bravos.
+    notifs: () => {
+      const L = SOCIAL && SOCIAL.notifs ? SOCIAL.notifs : null;
+      const vues = vue.vuesAvant != null ? vue.vuesAvant : (P.notifsVues || 0);
+      if (L && L.length) { const max = Math.max(...L.map((n) => n.t)); if (max > (P.notifsVues || 0)) { P.notifsVues = max; save(); setTimeout(majPastille); } }
+      const alerte = "Notification" in window && Notification.permission === "default";
+      return `<h1 style="margin-top:4px">Notifications</h1>
+        ${!L ? `<div class="post center muted">Chargement…</div>`
+        : !L.length ? `<div class="post center"><div style="font-size:2rem">🔔</div><p class="muted" style="margin:0">Rien pour l'instant. Les défis et les bravos de tes amis apparaîtront ici.</p></div>`
+        : `<div class="post liste">${L.map((n) => `<div class="notif ${n.t > vues ? "neuve" : ""}">
+            ${avatar(n.de)}<div style="flex:1">${esc(texteNotif(n))}<div class="small muted">${ilya(n.date)}</div>
+            ${n.type === "defi" && n.statut !== "relevé" ? `<button class="btn-primary" style="margin-top:6px" data-action="relever" data-defi="${esc(n.defi)}">Relever le défi</button>` : ""}</div></div>`).join("")}</div>`}
+        ${alerte ? `<div class="post"><p class="small muted" style="margin:0 0 8px">Recevoir aussi une alerte sur l'écran quand l'app est ouverte en arrière-plan :</p>
+          <button data-action="alertes">🔔 Activer les alertes</button></div>` : ""}`;
     },
 
     // Nouvelle partie : on coche une ou plusieurs matières de 3e.
@@ -487,10 +579,17 @@
       const pct = Math.round(r.bons / r.total * 100);
       const etoiles = pct === 100 ? 3 : pct >= 70 ? 2 : pct >= 40 ? 1 : 0;
       const msg = pct === 100 ? "Sans faute, impressionnant !" : pct >= 70 ? "Très bien, continue comme ça !" : pct >= 40 ? "Pas mal, encore un effort !" : "Courage, revois les fiches et réessaie !";
-      return `<div class="card stack center">
+      const d = quiz.defi;
+      const duel = d ? `<div class="defi-card" style="text-align:center">
+          <div class="small">⚔️ Défi de ${esc(d.de)}</div>
+          <div class="duel" style="color:inherit"><span><strong>${r.bons}/${r.total}</strong><br><span class="small">toi</span></span><span class="vs">VS</span><span><strong>${d.bons}/${d.total}</strong><br><span class="small">${esc(d.de)}</span></span></div>
+          <div class="defi-titre">${r.bons > d.bons ? "Tu as gagné ! 🏆" : r.bons === d.bons ? "Égalité 🤝" : `${esc(d.de)} gagne cette fois 💪`}</div>
+          <div class="small">${esc(d.de)} verra le résultat dans ses notifications.</div></div>` : "";
+      return `${duel}<div class="card stack center" ${d ? 'style="margin-top:12px"' : ""}>
         <div class="stars">${"⭐".repeat(etoiles)}${"☆".repeat(3 - etoiles)}</div>
         <div class="big-score">${r.bons}/${r.total}</div>
         <p>${msg}</p>
+        ${!d && peutDefier() && SOCIAL && SOCIAL.amis && SOCIAL.amis.length ? `<button class="btn-defier btn-big" data-action="defier">⚔️ Défier un ami avec ce score</button>` : ""}
         <p><strong>+${r.xp} XP</strong>${r.niveauUp ? ` · 🎉 Niveau ${niveau(P.xp).n} atteint : ${esc(niveau(P.xp).nom)} !` : ""}</p>
         ${r.nouveauxBadges.length ? `<div class="ok">Nouveau badge : ${r.nouveauxBadges.map((b) => b.ico + " " + esc(b.nom)).join(", ")}</div>` : ""}
         ${r.erreurs ? `<p class="small muted">${plural(r.erreurs, "erreur")} ajoutée${r.erreurs > 1 ? "s" : ""} à « Mes erreurs » pour la revanche.</p>` : ""}
@@ -502,7 +601,7 @@
     fiches: () => {
       const m = vue.matiere;
       if (!m) {
-        return `${retour()}<h1>Fiches de révision</h1>
+        return `<h1 style="margin-top:4px">Fiches de révision</h1>
         <div class="grid">${matieres().map((x) => {
           const fs = D.fiches.filter((f) => f.matiere === x);
           const ok = fs.filter((f) => P.maitrise[f.cle]).length;
@@ -525,7 +624,7 @@
       const themes = [...new Set(D.frise.map((e) => e.theme))];
       const t = vue.theme || "";
       const items = D.frise.filter((e) => !t || e.theme === t);
-      return `${retour()}<h1>⏳ Frise chronologique</h1>
+      return `${scriptUrl() ? retour("profil", "Profil") : ""}<h1>⏳ Frise chronologique</h1>
         <div class="tabs"><button class="${t ? "" : "on"}" data-go="frise" data-theme="">Tout</button>
           ${themes.map((x) => `<button class="${x === t ? "on" : ""}" data-go="frise" data-theme="${esc(x)}">${esc(x)}</button>`).join("")}</div>
         <div class="card"><div class="timeline">
@@ -553,7 +652,7 @@
       classes.forEach((x, i) => { rang = i && x.reussite === classes[i - 1].reussite ? rang : i + 1; x.rang = rang; });
       const medaille = (r) => ["🥇", "🥈", "🥉"][r - 1] || `<span class="rang">${r}</span>`;
       const moi = (L || []).find((x) => x.moi);
-      return `${retour()}<h1>🏆 Classement</h1>
+      return `<h1 style="margin-top:4px">🏆 Classement</h1>
         <p class="small muted">Classement par taux de bonnes réponses. Il faut au moins ${MIN} réponses pour être classé. Mis à jour à la fin de chaque partie.</p>
         ${!L ? `<div class="card"><p class="muted">Chargement du classement…</p></div>`
         : vue.erreurCl ? `<div class="card"><div class="warn">${esc(vue.erreurCl)}</div></div>`
@@ -573,14 +672,14 @@
         <button class="btn-primary btn-big" style="margin-top:16px" data-go="choix">🎯 Jouer pour grimper</button>`;
     },
 
-    badges: () => `${retour()}<h1>🏅 Badges</h1>
+    badges: () => `${retour("profil", "Profil")}<h1>🏅 Badges</h1>
       <div class="grid">${BADGES.map((b) => `<div class="card badge ${P.badges[b.id] ? "" : "locked"}">
         <div class="ico">${b.ico}</div><strong>${esc(b.nom)}</strong><div class="small muted">${esc(b.desc)}</div></div>`).join("")}</div>`,
 
     // ─────────── Statistiques ───────────
     parent: () => {
       if (P.pin && !vue.ok) {
-        return `${retour()}<div class="card stack center"><h2>🔒 Statistiques</h2>
+        return `${retour("profil", "Profil")}<div class="card stack center"><h2>🔒 Statistiques</h2>
           <form data-form="pin" class="stack"><input name="pin" type="password" inputmode="numeric" placeholder="Code parent" autocomplete="off">
           <button class="btn-primary">Entrer</button></form></div>`;
       }
@@ -589,7 +688,7 @@
         .concat(estParent() ? [["ajouter", "➕ Ajouter"], ["qualite", "🔎 Qualité"]] : [])
         .concat(scriptUrl() && P.cle ? [["eleves", "📈 Élèves"], ["partager", "🔗 Partager"]] : [])
         .concat([["reglages", "⚙️ Réglages"]]);
-      return `${retour()}<h1>Statistiques</h1>
+      return `${retour("profil", "Profil")}<h1>Statistiques</h1>
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${k === onglet ? "on" : ""}" data-action="onglet" data-onglet="${k}">${l}</button>`).join("")}</div>
         ${PARENT[onglet]()}`;
     }
@@ -924,12 +1023,16 @@
     if (P.serie.jours >= 7) gagner("jours7");
     if ((P.rattrapees || 0) >= 10) gagner("rattrapage");
     if (niveau(P.xp).n >= 6) gagner("niveau5");
+    if (quiz.defi) {
+      P.reponsesDefis = (P.reponsesDefis || []).concat({ id: quiz.defi.id, bons: quiz.bons });
+      if (quiz.bons > quiz.defi.bons) gagner("defi");
+    }
     P.envois = (P.envois || []).concat({
       date: horodatage(new Date()), bons: quiz.bons, total,
       matieres: [...new Set(quiz.questions.map((q) => (q.type ? "Dates" : q.matiere)))].join(", ")
     }).slice(-50);
     save();
-    synchroniser();
+    synchroniser().then(chargerSocial);
     quiz.resultat = { bons: quiz.bons, total, xp: quiz.xp, erreurs: quiz.erreurs, niveauUp: niveau(P.xp).n > avant, nouveauxBadges: quiz.badgesEnCours || [] };
     aller("resultat");
     if (quiz.bons === total || quiz.resultat.niveauUp) confetti(90);
@@ -966,6 +1069,112 @@
       .catch(() => { /* on réessaiera */ })
       .finally(() => { synchroEnCours = false; });
   }
+  // ───────────────────────── Social : fil, défis, bravos, notifications ─────────────────────────
+  // SOCIAL = réponse de l'action « social » du script (null tant que rien n'est chargé).
+  let SOCIAL = null;
+  const socialPossible = () => !!scriptUrl() && (!!ACCES.code || !!P.cle);
+  const peutDefier = () => !!scriptUrl() && !!ACCES.code && !P.cle;
+  const nonLues = () => (SOCIAL && SOCIAL.notifs ? SOCIAL.notifs.filter((n) => n.t > (P.notifsVues || 0)).length : 0);
+  let socialEnCours = false;
+  async function chargerSocial() {
+    if (!socialPossible() || socialEnCours) return;
+    socialEnCours = true;
+    try {
+      await envoyerReponsesDefis();
+      const avant = nonLues();
+      SOCIAL = await envoyer({ action: "social", code: ACCES.code || "", appareil: ACCES.appareil });
+      const apres = nonLues();
+      // Alerte système si une nouvelle notification arrive pendant que l'app est en arrière-plan.
+      if (apres > avant && document.hidden && "Notification" in window && Notification.permission === "granted") {
+        try { new Notification("BrevetQuizz", { body: texteNotif(SOCIAL.notifs[0]), icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" }); } catch (e) { /* non supporté */ }
+      }
+      majPastille();
+      if (["accueil", "notifs", "profil"].includes(vue.nom)) render();
+    } catch (e) { /* hors ligne : on réessaiera */ } finally { socialEnCours = false; }
+  }
+  function majPastille() {
+    const p = document.getElementById("pastille");
+    if (!p) return;
+    const n = nonLues();
+    p.textContent = n > 9 ? "9+" : String(n);
+    p.hidden = !n;
+  }
+  // Réponses aux défis gardées si l'envoi a échoué (hors ligne) : elles repartent au prochain chargement.
+  async function envoyerReponsesDefis() {
+    const file = (P.reponsesDefis || []).slice();
+    for (const r of file) {
+      try {
+        await envoyer({ action: "repondreDefi", code: ACCES.code, appareil: ACCES.appareil, id: r.id, bons: r.bons });
+        P.reponsesDefis = (P.reponsesDefis || []).filter((x) => x.id !== r.id); save();
+      } catch (e) { return; }
+    }
+  }
+  function texteNotif(n) {
+    if (!n) return "";
+    const score = `${n.bons}/${n.total}${n.matieres ? " en " + n.matieres : ""}`;
+    if (n.type === "defi") return `🔥 ${n.de} te défie : bats son ${score}`;
+    if (n.type === "releve") {
+      const issue = n.score > n.bons ? `${n.de} gagne` : n.score === n.bons ? "égalité" : "tu gagnes";
+      return `⚔️ ${n.de} a relevé ton défi : ${n.score}/${n.total} contre ton ${n.bons}/${n.total} (${issue})`;
+    }
+    return `❤️ ${n.de} t'a dit bravo pour ton ${score}`;
+  }
+  // « 13/10/2026 17:05 » → « il y a 12 min »
+  function ilya(s) {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/.exec(s || "");
+    if (!m) return s || "";
+    const min = Math.round((Date.now() - new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5])) / 60000);
+    if (min < 1) return "à l'instant";
+    if (min < 60) return `il y a ${min} min`;
+    if (min < 24 * 60) return `il y a ${Math.round(min / 60)} h`;
+    const j = Math.round(min / 1440);
+    return j === 1 ? "hier" : j < 7 ? `il y a ${j} jours` : `le ${m[1]}/${m[2]}`;
+  }
+  const avatar = (nom) => {
+    const teintes = ["#D4537E", "#378ADD", "#1D9E75", "#BA7517", "#7F77DD", "#D85A30"];
+    const c = teintes[parseInt(hash(nom || "?"), 36) % teintes.length];
+    return `<span class="avatar" style="background:${c}">${esc((nom || "?").trim().charAt(0).toUpperCase())}</span>`;
+  };
+  function lancerDefi(id) {
+    const d = SOCIAL && SOCIAL.recus.find((x) => x.id === id);
+    if (!d) { toast("Défi introuvable"); return; }
+    if (d.statut === "relevé") { toast("Tu as déjà relevé ce défi"); return; }
+    const parId = new Map(toutesQuestions().map((q) => [q.id, q]));
+    const questions = d.questions.map((qid) => parId.get(qid)).filter(Boolean).map(preparer);
+    if (!questions.length) { toast("Les questions de ce défi n'existent plus"); return; }
+    quiz = { poolId: "#defi", defi: d, questions, cycle: false, i: 0, bons: 0, combo: 0, xp: 0, erreurs: 0, repondu: null, xpDebut: P.xp };
+    fermerModale();
+    aller("quiz");
+  }
+  function ouvrirDefier() {
+    const amis = (SOCIAL && SOCIAL.amis) || [];
+    const m = document.getElementById("modal");
+    m.innerHTML = `<form class="sheet stack" data-form="defier">
+      <div class="row"><h2 style="margin:0">⚔️ Défier un ami</h2><span class="spacer"></span><button type="button" class="btn-ghost" data-action="fermer" aria-label="Fermer">✕</button></div>
+      <p class="small muted" style="margin:0">Ton ami rejouera exactement les mêmes ${quiz.questions.length} questions. Il doit battre ton ${quiz.bons}/${quiz.questions.length}.</p>
+      ${amis.length ? amis.map((a) => `<label class="ami-choix">${avatar(a.nom)}<span style="flex:1">${esc(a.nom)}</span><input type="checkbox" name="ami" value="${esc(a.id)}"></label>`).join("")
+        : `<p class="muted">Aucun ami pour l'instant. Demande au parent de créer des invitations.</p>`}
+      ${amis.length ? `<button class="btn-primary btn-big">Envoyer le défi 🔥</button>` : ""}
+    </form>`;
+    m.hidden = false;
+  }
+  async function envoyerDefi(ids) {
+    const matieres = [...new Set(quiz.questions.map((q) => (q.type ? "Dates" : q.matiere)))].join(", ");
+    await envoyer({ action: "defier", code: ACCES.code, appareil: ACCES.appareil, pour: ids,
+      questions: quiz.questions.map((q) => q.id), matieres, bons: quiz.bons, total: quiz.questions.length });
+    const noms = SOCIAL.amis.filter((a) => ids.includes(a.id)).map((a) => a.nom);
+    const texte = `${P.prenom || "Un ami"} te défie sur BrevetQuizz : bats son ${quiz.bons}/${quiz.questions.length} en ${matieres} ! 🔥 ${location.origin + location.pathname}`;
+    const m = document.getElementById("modal");
+    m.innerHTML = `<div class="sheet stack center">
+      <div style="font-size:3rem">🔥</div>
+      <h2 style="margin:0">Défi envoyé à ${esc(noms.join(", "))}</h2>
+      <p class="muted" style="margin:0">Le défi apparaîtra dans les notifications 🔔 à la prochaine ouverture de l'app. Pour prévenir tout de suite :</p>
+      <button class="btn-primary btn-big" data-action="prevenir" data-texte="${esc(texte)}">📲 Prévenir par message</button>
+      <button data-action="fermer">Fermer</button></div>`;
+    m.hidden = false;
+    chargerSocial();
+  }
+
   function serieActuelle() {
     const hier = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
     return P.serie.dernier === today() || P.serie.dernier === hier ? P.serie.jours : 0;
@@ -1050,7 +1259,7 @@
     else if (a === "repondre") repondre(+el.dataset.i);
     else if (a === "suivante") { if (quiz.i + 1 < quiz.questions.length) { quiz.i++; quiz.repondu = null; render(); window.scrollTo(0, 0); } else terminerQuiz(); }
     else if (a === "quitter") { if (confirm("Quitter le quiz ? Tes réponses déjà données sont gardées.")) aller("accueil"); }
-    else if (a === "rejouer") lancerQuiz(quiz.poolId === "#erreurs" && !Object.keys(P.erreurs).length ? "*" : quiz.poolId);
+    else if (a === "rejouer") lancerQuiz(quiz.poolId === "#defi" || (quiz.poolId === "#erreurs" && !Object.keys(P.erreurs).length) ? "#selection" : quiz.poolId);
     else if (a === "voir-fiche") ouvrirFiche(el.dataset.cle);
     else if (a === "fermer") fermerModale();
     else if (a === "maitrise") {
@@ -1064,6 +1273,23 @@
     else if (a === "recharger") {
       const depuisParent = vue.nom === "parent";
       demarrer(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); });
+    }
+    else if (a === "relever") lancerDefi(el.dataset.defi);
+    else if (a === "defier") ouvrirDefier();
+    else if (a === "bravo") {
+      const x = SOCIAL && SOCIAL.fil.find((p) => p.id === el.dataset.partie);
+      if (!x || x.jaiDitBravo) return;
+      x.jaiDitBravo = true; x.bravos++; render(); // affichage immédiat, envoi ensuite
+      envoyer({ action: "bravo", code: ACCES.code, appareil: ACCES.appareil, partie: x.id })
+        .catch(() => { x.jaiDitBravo = false; x.bravos--; render(); toast("Bravo non envoyé, réessaie plus tard"); });
+    }
+    else if (a === "prevenir") {
+      const texte = el.dataset.texte;
+      if (navigator.share) navigator.share({ text: texte }).catch(() => {});
+      else navigator.clipboard.writeText(texte).then(() => toast("📋 Message copié : colle-le dans WhatsApp ou par SMS"), () => toast(texte, 8000));
+    }
+    else if (a === "alertes") {
+      Notification.requestPermission().then((p) => { toast(p === "granted" ? "🔔 Alertes activées" : "Alertes refusées"); render(); });
     }
     else if (a === "voir-eleve") { vue.eleve = el.dataset.code; render(); }
     else if (a === "maj-resultats") { vue.resultats = null; vue.chargeRes = false; render(); }
@@ -1164,6 +1390,13 @@
     else if (type === "pin") {
       if (fd.get("pin") === P.pin) aller("parent", { ok: true }); else { toast("Code incorrect"); }
     }
+    else if (type === "defier") {
+      const ids = fd.getAll("ami").map(String);
+      if (!ids.length) { toast("Choisis au moins un ami"); return; }
+      const btn = f.querySelector("button.btn-primary"); btn.disabled = true; btn.textContent = "Envoi…";
+      try { await envoyerDefi(ids); }
+      catch (e) { toast("❌ " + e.message, 5000); btn.disabled = false; btn.textContent = "Envoyer le défi 🔥"; }
+    }
     else if (type === "cle-parent") {
       P.cle = String(fd.get("cle")).trim(); save();
       demarrer();
@@ -1223,4 +1456,7 @@
 
   // ───────────────────────── Démarrage ─────────────────────────
   demarrer();
+  // Fil et notifications rafraîchis toutes les 2 minutes (jamais pendant une partie) et au retour dans l'app.
+  setInterval(() => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); }, 120000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); });
 })();

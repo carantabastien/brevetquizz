@@ -26,8 +26,12 @@ const ONGLETS = {
   'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut'],
   'Résultats': ['Code', 'Nom', 'Prénom saisi', 'Dernière activité', 'XP', 'Niveau', 'Parties', 'Réponses', 'Réussite',
     'Série (jours)', 'Erreurs à revoir', 'Badges', 'Fiches maîtrisées', 'Détail par matière'],
-  'Historique': ['Date', 'Code', 'Nom', 'Matières', 'Bonnes réponses', 'Questions', 'Réussite']
+  'Historique': ['Date', 'Code', 'Nom', 'Matières', 'Bonnes réponses', 'Questions', 'Réussite'],
+  'Défis': ['ID', 'Date', 'De', 'Pour', 'Matières', 'Questions', 'Bonnes réponses', 'Total', 'Statut', 'Score réponse', 'Date réponse'],
+  'Réactions': ['Date', 'De', 'Partie', 'Pour']
 };
+// Colonnes de l'onglet Défis (base 0)
+const DF = { id: 0, date: 1, de: 2, pour: 3, matieres: 4, questions: 5, bons: 6, total: 7, statut: 8, score: 9, dateRep: 10 };
 // Colonnes de l'onglet Accès (base 0)
 const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6 };
 
@@ -79,6 +83,19 @@ function doPost(e) {
         if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
       }
       return json_({ ok: true, classement: classement_(ss, parent ? '' : String(req.code)) });
+    }
+    // Partie sociale : fil d'activité, défis, bravos et notifications. Le parent peut lire le fil (sans « moi »).
+    if (['social', 'defier', 'repondreDefi', 'bravo'].indexOf(req.action) >= 0) {
+      let moi = '';
+      if (!(parent && req.action === 'social')) {
+        const refus = verifierInvitation_(ss, req.code, req.appareil);
+        if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
+        moi = String(req.code);
+      }
+      if (req.action === 'social') return json_(social_(ss, moi));
+      if (req.action === 'defier') return json_(defier_(ss, moi, req));
+      if (req.action === 'repondreDefi') return json_(repondreDefi_(ss, moi, req.id, req.bons));
+      return json_(bravo_(ss, moi, req.partie));
     }
     // Un invité envoie le résumé de sa progression et ses dernières parties (à la fin de chaque partie).
     if (req.action === 'resultat') {
@@ -203,6 +220,118 @@ function enregistrerResultat_(ss, code, r, parties) {
     const h = ss.getSheetByName('Historique');
     h.getRange(h.getLastRow() + 1, 1, lignes.length, 7).setNumberFormat('@').setValues(lignes);
   }
+}
+
+/** Identifiant public d'un invité : sert à désigner un ami sans jamais révéler son code d'invitation. */
+function idPublic_(code) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, code + '|' + CLE_SECRETE).slice(0, 6)
+    .map(function (b) { return ((b + 256) % 256).toString(16).padStart(2, '0'); }).join('');
+}
+
+/** « 13/10/2026 17:05 » → millisecondes (pour trier). */
+function temps_(s) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})(?: (\d{2}):(\d{2}))?/.exec(String(s || ''));
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)).getTime() : 0;
+}
+
+function membres_(ss) {
+  const membres = {};
+  ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
+    if (l[A.code] && l[A.statut] === 'actif') membres[l[A.code]] = { id: idPublic_(l[A.code]), nom: l[A.nom] };
+  });
+  return membres;
+}
+
+/** Fil d'activité, défis et notifications vus par « moi » (code d'invitation, vide pour le parent). */
+function social_(ss, moi) {
+  const membres = membres_(ss);
+  const hist = ss.getSheetByName('Historique').getDataRange().getDisplayValues();
+  const reac = ss.getSheetByName('Réactions').getDataRange().getDisplayValues().slice(1).filter(function (l) { return l[2]; });
+  const bravos = {}, mesBravos = {};
+  reac.forEach(function (l) {
+    bravos[l[2]] = (bravos[l[2]] || 0) + 1;
+    if (moi && l[1] === moi) mesBravos[l[2]] = true;
+  });
+
+  const fil = [];
+  for (let i = hist.length - 1; i >= 1 && fil.length < 40; i--) {
+    const l = hist[i], m = membres[l[1]];
+    if (!m) continue;
+    const id = 'h' + (i + 1);
+    fil.push({ type: 'partie', id: id, date: l[0], t: temps_(l[0]), nom: m.nom, moi: !!moi && l[1] === moi,
+      matieres: l[3], bons: +l[4] || 0, total: +l[5] || 0, bravos: bravos[id] || 0, jaiDitBravo: !!mesBravos[id] });
+  }
+
+  const recus = [], envoyes = [];
+  ss.getSheetByName('Défis').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
+    const de = membres[l[DF.de]], pour = membres[l[DF.pour]];
+    if (!l[DF.id] || !de || !pour) return;
+    const d = { id: l[DF.id], date: l[DF.date], t: temps_(l[DF.date]), de: de.nom, pour: pour.nom, matieres: l[DF.matieres],
+      bons: +l[DF.bons] || 0, total: +l[DF.total] || 0, statut: l[DF.statut], score: l[DF.score] === '' ? null : +l[DF.score],
+      dateRep: l[DF.dateRep], tRep: temps_(l[DF.dateRep]) };
+    if (moi && l[DF.pour] === moi) { let q = []; try { q = JSON.parse(l[DF.questions] || '[]'); } catch (e) { /* ligne modifiée */ } recus.push(Object.assign({ questions: q }, d)); }
+    if (moi && l[DF.de] === moi) envoyes.push(d);
+    if (d.statut === 'relevé') fil.push({ type: 'defi', id: d.id, date: d.dateRep, t: d.tRep, de: d.de, pour: d.pour, matieres: d.matieres, bons: d.bons, total: d.total, score: d.score });
+  });
+
+  const notifs = [];
+  recus.forEach(function (d) { notifs.push({ type: 'defi', t: d.t, date: d.date, de: d.de, defi: d.id, matieres: d.matieres, bons: d.bons, total: d.total, statut: d.statut }); });
+  envoyes.forEach(function (d) { if (d.statut === 'relevé') notifs.push({ type: 'releve', t: d.tRep, date: d.dateRep, de: d.pour, matieres: d.matieres, bons: d.bons, total: d.total, score: d.score }); });
+  reac.forEach(function (l) {
+    if (!moi || l[3] !== moi || !membres[l[1]]) return;
+    const h = hist[parseInt(String(l[2]).slice(1), 10) - 1] || [];
+    notifs.push({ type: 'bravo', t: temps_(l[0]), date: l[0], de: membres[l[1]].nom, matieres: h[3] || '', bons: +h[4] || 0, total: +h[5] || 0 });
+  });
+
+  fil.sort(function (a, b) { return b.t - a.t; });
+  notifs.sort(function (a, b) { return b.t - a.t; });
+  return {
+    ok: true,
+    amis: Object.keys(membres).filter(function (c) { return c !== moi; }).map(function (c) { return membres[c]; }),
+    fil: fil.slice(0, 40), recus: recus, envoyes: envoyes, notifs: notifs.slice(0, 40)
+  };
+}
+
+/** Crée un défi pour chaque ami choisi (désignés par leur identifiant public). */
+function defier_(ss, moi, req) {
+  const codes = {};
+  Object.keys(membres_(ss)).forEach(function (c) { if (c !== moi) codes[idPublic_(c)] = c; });
+  const questions = (req.questions || []).slice(0, 20).map(String);
+  if (!questions.length) throw new Error('Défi sans questions');
+  const lignes = (req.pour || []).filter(function (id) { return codes[id]; }).map(function (id) {
+    return [Utilities.getUuid().replace(/-/g, '').slice(0, 10), horodatage_(), moi, codes[id], String(req.matieres || ''),
+      JSON.stringify(questions), String(+req.bons || 0), String(+req.total || questions.length), 'en attente', '', ''];
+  });
+  if (!lignes.length) throw new Error('Choisis au moins un ami');
+  const sh = ss.getSheetByName('Défis');
+  sh.getRange(sh.getLastRow() + 1, 1, lignes.length, 11).setNumberFormat('@').setValues(lignes);
+  return { ok: true, envoyes: lignes.length };
+}
+
+function repondreDefi_(ss, moi, id, bons) {
+  const sh = ss.getSheetByName('Défis');
+  const v = sh.getDataRange().getDisplayValues();
+  for (let i = 1; i < v.length; i++) {
+    if (v[i][DF.id] !== String(id) || v[i][DF.pour] !== moi) continue;
+    if (v[i][DF.statut] !== 'relevé') {
+      sh.getRange(i + 1, DF.statut + 1, 1, 3).setNumberFormat('@').setValues([['relevé', String(+bons || 0), horodatage_()]]);
+    }
+    return { ok: true, aBattre: +v[i][DF.bons] || 0 };
+  }
+  return { ok: false, erreur: 'Défi introuvable' };
+}
+
+/** « Bravo » sur une partie d'un ami (une fois par partie, jamais sur la sienne). */
+function bravo_(ss, moi, partie) {
+  const m = /^h(\d+)$/.exec(String(partie || ''));
+  const h = ss.getSheetByName('Historique');
+  if (!m || +m[1] < 2 || +m[1] > h.getLastRow()) throw new Error('Partie introuvable');
+  const auteur = h.getRange(+m[1], 2).getDisplayValue();
+  if (auteur === moi) return { ok: true };
+  const r = ss.getSheetByName('Réactions');
+  const deja = r.getDataRange().getDisplayValues().some(function (l) { return l[1] === moi && l[2] === partie; });
+  if (!deja) r.getRange(r.getLastRow() + 1, 1, 1, 4).setNumberFormat('@').setValues([[horodatage_(), moi, String(partie), auteur]]);
+  return { ok: true };
 }
 
 /** Élèves dont l'invitation est active, avec leur réussite. « moi » repère la ligne de l'élève qui demande. */
