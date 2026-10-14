@@ -1478,6 +1478,25 @@
   });
 
   // ───────────────────────── Démarrage ─────────────────────────
+  // Mise à jour automatique : GitHub Pages (et l'app ajoutée à l'écran d'accueil) peuvent garder l'ancienne
+  // page en cache. On relit index.html sans cache ; si la version des fichiers a changé, on recharge une fois.
+  function verifierMiseAJour() {
+    const actuelle = ((document.querySelector('script[src*="js/app.js"]') || {}).src || "").split("v=")[1];
+    if (!actuelle) return; // pas de numéro de version (test en local)
+    fetch(location.pathname + "?maj=" + Date.now(), { cache: "no-store" })
+      .then((r) => r.text())
+      .then((html) => {
+        const enLigne = (html.match(/js\/app\.js\?v=([a-z0-9]+)/) || [])[1];
+        if (!enLigne || enLigne === actuelle) return;
+        let deja = "";
+        try { deja = sessionStorage.getItem("bq_maj") || ""; sessionStorage.setItem("bq_maj", enLigne); } catch (e) { /* rien */ }
+        if (deja !== enLigne && vue.nom !== "quiz") location.reload();
+      })
+      .catch(() => { /* hors ligne */ });
+  }
+  verifierMiseAJour();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) verifierMiseAJour(); });
+
   demarrer();
   // Fil et notifications rafraîchis toutes les 2 minutes (jamais pendant une partie) et au retour dans l'app.
   setInterval(() => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); }, 120000);
