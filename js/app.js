@@ -985,6 +985,7 @@
     const t = poolId === "#erreurs" ? { questions: shuffle(pool).slice(0, n).map(preparer), cycle: false } : tirer(groupes, Math.min(n, pool.length));
     quiz = { poolId, questions: t.questions, cycle: t.cycle, i: 0, bons: 0, combo: 0, xp: 0, erreurs: 0, repondu: null, xpDebut: P.xp };
     aller("quiz");
+    afficherRegles();
   }
   function repondre(i) {
     if (quiz.repondu != null) return;
@@ -1034,6 +1035,26 @@
       <p style="margin:0">Elle est comptée <strong>fausse</strong>.</p>
       <p class="defi-titre" style="color:var(--primary);margin:4px 0">${MESSAGES_TRICHE[(P.triches - 1) % MESSAGES_TRICHE.length]}</p>
       <button class="btn-primary btn-big" data-action="fermer">J'ai compris</button></div>`;
+    m.hidden = false;
+  }
+  // Avertissement au lancement d'une partie (toujours en défi, sinon tant que « Ne plus afficher » n'est pas coché).
+  function afficherRegles() {
+    if (!quiz || (P.reglesMasquees && !quiz.defi)) return;
+    const m = document.getElementById("modal");
+    m.innerHTML = `<div class="sheet stack" role="alertdialog" aria-label="Règle anti-triche">
+      <div class="center" style="font-size:3rem">📵</div>
+      <h2 class="center" style="margin:0">Reste dans l'app pendant la partie</h2>
+      <p style="margin:0">Si tu quittes l'app pendant une question (autre appli, Google, messages…) :</p>
+      <ul class="fiche-points" style="margin:0">
+        ${quiz.defi
+          ? `<li>🚫 <strong>En défi, la question est comptée fausse</strong> dès la première sortie.</li>`
+          : `<li>📞 <strong>1re fois</strong> : la question est remplacée par une autre, sans pénalité (un appel, ça arrive).</li>
+             <li>🚫 <strong>Ensuite</strong> : la question est comptée fausse et part dans « Mes erreurs ».</li>`}
+        <li>Une fois ta réponse donnée, tu peux sortir sans risque.</li>
+      </ul>
+      <p class="small muted center" style="margin:0">Au brevet, pas de téléphone : entraîne-toi dans les mêmes conditions 💪</p>
+      ${quiz.defi ? "" : `<label class="ami-choix" style="border:0;justify-content:center"><input type="checkbox" id="regles-masquer"> Ne plus afficher ce message</label>`}
+      <button class="btn-primary btn-big" data-action="regles-ok">C'est parti !</button></div>`;
     m.hidden = false;
   }
   // Remplace la question en cours par une autre de la même matière, jamais vue de préférence.
@@ -1230,6 +1251,7 @@
     quiz = { poolId: "#defi", defi: d, questions, cycle: false, i: 0, bons: 0, combo: 0, xp: 0, erreurs: 0, repondu: null, xpDebut: P.xp };
     fermerModale();
     aller("quiz");
+    afficherRegles();
   }
   async function ouvrirDefier() {
     const m = document.getElementById("modal");
@@ -1368,6 +1390,11 @@
     else if (a === "recharger") {
       const depuisParent = vue.nom === "parent";
       demarrer(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); });
+    }
+    else if (a === "regles-ok") {
+      const c = document.getElementById("regles-masquer");
+      if (c && c.checked) { P.reglesMasquees = true; save(); }
+      fermerModale();
     }
     else if (a === "relever") lancerDefi(el.dataset.defi);
     else if (a === "defier") ouvrirDefier();
