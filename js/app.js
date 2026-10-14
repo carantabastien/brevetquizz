@@ -558,6 +558,7 @@
         <span class="small muted">${quiz.i + 1}/${quiz.questions.length}</span>
       </div>
       ${quiz.cycle && quiz.i === 0 && !fini ? `<p class="ok">🔄 Tu as vu toutes les questions de cette sélection : nouveau tour !</p>` : ""}
+      ${quiz.i === 0 && !fini ? `<p class="warn">📵 Reste dans l'app : si tu la quittes pendant une question, ta réponse sera comptée fausse.</p>` : ""}
       <div class="card ${fini && !ok ? "shake" : ""}">
         <span class="tag" style="background:${couleur(q.matiere)}22;color:${couleur(q.matiere)}">${emoji(q.matiere)} ${esc(q.matiere)}${q.theme ? " · " + esc(q.theme) : ""}</span>
         <div class="question">${esc(q.question)}</div>
@@ -570,7 +571,7 @@
           }).join("")}
         </div>
         ${fini ? `<div class="feedback ${ok ? "good" : "bad"}">
-          <strong>${ok ? ["Bravo ! 🎉", "Exact ! ✅", "Bien joué ! 💪", "Parfait ! ⭐"][quiz.i % 4] : "Pas tout à fait…"}</strong>
+          <strong>${ok ? ["Bravo ! 🎉", "Exact ! ✅", "Bien joué ! 💪", "Parfait ! ⭐"][quiz.i % 4] : quiz.repondu === TRICHE ? "🚫 Tu as quitté l'app : réponse comptée fausse" : "Pas tout à fait…"}</strong>
           ${ok && quiz.combo >= 3 ? ` <span class="combo">🔥 Combo x${quiz.combo}</span>` : ""}
           ${ok ? ` <span class="small muted">+${quiz.dernierGain} XP</span>` : `<div>La bonne réponse : <strong>${esc(q.bonne)}</strong></div>`}
           ${q.explication && (q.type !== "frise-evt" || !ok) ? `<p style="margin:8px 0 0;white-space:pre-line">${q.type === "frise-evt" ? "Les autres dates : \n" : ""}${esc(q.explication)}</p>` : ""}
@@ -599,6 +600,7 @@
         ${!d && scriptUrl() && P.cle ? `<p class="small muted" style="margin:0">⚔️ Les défis se lancent depuis l'app d'un élève invité, pas depuis le compte parent.</p>` : ""}
         <p><strong>+${r.xp} XP</strong>${r.niveauUp ? ` · 🎉 Niveau ${niveau(P.xp).n} atteint : ${esc(niveau(P.xp).nom)} !` : ""}</p>
         ${r.nouveauxBadges.length ? `<div class="ok">Nouveau badge : ${r.nouveauxBadges.map((b) => b.ico + " " + esc(b.nom)).join(", ")}</div>` : ""}
+        ${quiz.triches ? `<p class="warn" style="margin:0">🚫 ${plural(quiz.triches, "question comptée fausse", "questions comptées fausses")} parce que tu as quitté l'app. Révise au lieu de tricher ! 😉</p>` : ""}
         ${r.erreurs ? `<p class="small muted">${plural(r.erreurs, "erreur")} ajoutée${r.erreurs > 1 ? "s" : ""} à « Mes erreurs » pour la revanche.</p>` : ""}
         <button class="btn-primary btn-big" data-action="rejouer">Encore un quiz 🔁</button>
         <button data-go="accueil">Accueil</button>
@@ -983,9 +985,46 @@
     aller("quiz");
   }
   function repondre(i) {
-    const q = quiz.questions[quiz.i];
     if (quiz.repondu != null) return;
-    const choix = q.choix[i];
+    enregistrerReponse(quiz.questions[quiz.i].choix[i]);
+  }
+  // ───── Anti-triche : quitter l'app pendant une question = réponse comptée fausse ─────
+  const TRICHE = "\u0000triche"; // « réponse » enregistrée quand l'élève a quitté l'app
+  const MESSAGES_TRICHE = [
+    "Révise au lieu de tricher ! 😉",
+    "Au brevet, pas de Google… Entraîne-toi sans ! 📵",
+    "La meilleure antisèche, c'est ta mémoire 🧠",
+    "Tricher, c'est se mentir à soi-même. Allez, on révise ! 💪"
+  ];
+  let sortieDepuis = 0;     // moment où l'app a été quittée pendant une question
+  let ignorerSortie = false; // pendant nos propres boîtes de dialogue (ex. « Quitter le quiz ? »)
+  function debutSortie() {
+    if (vue.nom === "quiz" && quiz && quiz.repondu == null && !ignorerSortie && !sortieDepuis) sortieDepuis = Date.now();
+  }
+  function finSortie() {
+    if (!sortieDepuis) return;
+    const duree = Date.now() - sortieDepuis;
+    sortieDepuis = 0;
+    // Tolérance de 1,5 s (clic hors de la page, petite fenêtre système…)
+    if (duree < 1500 || vue.nom !== "quiz" || !quiz || quiz.repondu != null) return;
+    quiz.triches = (quiz.triches || 0) + 1;
+    P.triches = (P.triches || 0) + 1;
+    enregistrerReponse(TRICHE);
+    const m = document.getElementById("modal");
+    m.innerHTML = `<div class="sheet stack center" role="alertdialog" aria-label="Sortie de l'app détectée">
+      <div style="font-size:3rem">🚫</div>
+      <h2 style="margin:0">Tu as quitté l'app pendant la question</h2>
+      <p style="margin:0">Elle est comptée <strong>fausse</strong>.</p>
+      <p class="defi-titre" style="color:var(--primary);margin:4px 0">${MESSAGES_TRICHE[(P.triches - 1) % MESSAGES_TRICHE.length]}</p>
+      <button class="btn-primary btn-big" data-action="fermer">J'ai compris</button></div>`;
+    m.hidden = false;
+  }
+  document.addEventListener("visibilitychange", () => (document.hidden ? debutSortie() : finSortie()));
+  window.addEventListener("blur", debutSortie);
+  window.addEventListener("focus", finSortie);
+
+  function enregistrerReponse(choix) {
+    const q = quiz.questions[quiz.i];
     quiz.repondu = choix;
     const ok = choix === q.bonne;
     const m = q.type ? "Dates (frise)" : q.matiere;
@@ -1281,7 +1320,7 @@
     else if (a === "go-partie") lancerQuiz("#selection");
     else if (a === "repondre") repondre(+el.dataset.i);
     else if (a === "suivante") { if (quiz.i + 1 < quiz.questions.length) { quiz.i++; quiz.repondu = null; render(); window.scrollTo(0, 0); } else terminerQuiz(); }
-    else if (a === "quitter") { if (confirm("Quitter le quiz ? Tes réponses déjà données sont gardées.")) aller("accueil"); }
+    else if (a === "quitter") { ignorerSortie = true; const oui = confirm("Quitter le quiz ? Tes réponses déjà données sont gardées."); ignorerSortie = false; if (oui) aller("accueil"); }
     else if (a === "rejouer") lancerQuiz(quiz.poolId === "#defi" || (quiz.poolId === "#erreurs" && !Object.keys(P.erreurs).length) ? "#selection" : quiz.poolId);
     else if (a === "voir-fiche") ouvrirFiche(el.dataset.cle);
     else if (a === "fermer") fermerModale();
