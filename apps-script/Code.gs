@@ -23,7 +23,7 @@ const ONGLETS = {
   Quiz: ['Matière', 'Thème', 'Question', 'Bonne réponse', 'Mauvaise réponse 1', 'Mauvaise réponse 2', 'Mauvaise réponse 3', 'Explication'],
   Fiches: ['Matière', 'Thème', 'Fiche', 'Point à retenir'],
   Frise: ['Thème', 'Année', 'Événement'],
-  'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut'],
+  'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut', 'Invité par'],
   'Résultats': ['Code', 'Nom', 'Prénom saisi', 'Dernière activité', 'XP', 'Niveau', 'Parties', 'Réponses', 'Réussite',
     'Série (jours)', 'Erreurs à revoir', 'Badges', 'Fiches maîtrisées', 'Détail par matière'],
   'Historique': ['Date', 'Code', 'Nom', 'Matières', 'Bonnes réponses', 'Questions', 'Réussite'],
@@ -33,7 +33,7 @@ const ONGLETS = {
 // Colonnes de l'onglet Défis (base 0)
 const DF = { id: 0, date: 1, de: 2, pour: 3, matieres: 4, questions: 5, bons: 6, total: 7, statut: 8, score: 9, dateRep: 10 };
 // Colonnes de l'onglet Accès (base 0)
-const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6 };
+const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6, par: 7 };
 
 /** À exécuter une fois : crée les onglets manquants et met les colonnes de texte au format « texte brut ». */
 function installer() {
@@ -44,6 +44,8 @@ function installer() {
       sh = ss.insertSheet(nom);
       sh.getRange(1, 1, 1, ONGLETS[nom].length).setValues([ONGLETS[nom]]).setFontWeight('bold');
     }
+    const entete = sh.getRange(1, 1, 1, ONGLETS[nom].length);
+    if (entete.getDisplayValues()[0].some(function (v) { return v === ''; })) entete.setValues([ONGLETS[nom]]).setFontWeight('bold');
     if (nom === 'Frise') return; // l'année reste un nombre
     // Évite que Google transforme « 1914 » ou « 1/2 » en nombre ou en date.
     const nbCol = ONGLETS[nom].length;
@@ -68,43 +70,60 @@ function doPost(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Seule action ouverte aux invités : lire les questions, avec un code valable pour CET appareil.
-    if (req.action === 'donnees') {
-      if (!parent) {
-        const refus = verifierInvitation_(ss, req.code, req.appareil);
-        if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
-      }
-      return json_({ ok: true, parent: parent, quiz: lire_(ss, 'Quiz'), fiches: lire_(ss, 'Fiches'), frise: lire_(ss, 'Frise') });
-    }
-    // Classement visible par tous les invités : prénom, réussite et nombre de réponses uniquement (jamais les codes).
-    if (req.action === 'classement') {
-      if (!parent) {
-        const refus = verifierInvitation_(ss, req.code, req.appareil);
-        if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
-      }
-      return json_({ ok: true, classement: classement_(ss, parent ? '' : String(req.code)) });
-    }
-    // Partie sociale : fil d'activité, défis, bravos et notifications. Le parent peut lire le fil (sans « moi »).
-    if (['social', 'defier', 'repondreDefi', 'bravo'].indexOf(req.action) >= 0) {
-      let moi = '';
-      if (!(parent && req.action === 'social')) {
-        const refus = verifierInvitation_(ss, req.code, req.appareil);
-        if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
-        moi = String(req.code);
-      }
-      if (req.action === 'social') return json_(social_(ss, moi));
-      if (req.action === 'defier') return json_(defier_(ss, moi, req));
-      if (req.action === 'repondreDefi') return json_(repondreDefi_(ss, moi, req.id, req.bons));
-      return json_(bravo_(ss, moi, req.partie));
-    }
-    // Un invité envoie le résumé de sa progression et ses dernières parties (à la fin de chaque partie).
-    if (req.action === 'resultat') {
+    // Identité du joueur : son code d'invitation, lié à CET appareil. Le détenteur de la clé peut aussi être joueur.
+    let moi = '';
+    if (req.code) {
       const refus = verifierInvitation_(ss, req.code, req.appareil);
-      if (refus) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
-      enregistrerResultat_(ss, String(req.code), req.resume || {}, req.parties || []);
-      return json_({ ok: true });
+      if (refus && !parent) return json_({ ok: false, code: refus, erreur: MESSAGES[refus] });
+      if (!refus) moi = String(req.code);
+    }
+    const refusAucune = function () { return json_({ ok: false, code: 'aucune', erreur: MESSAGES.aucune }); };
+    // Une invitation « cible » (à désactiver, réactiver…) : n'importe laquelle avec la clé, sinon seulement les siennes.
+    const changer = function (modif) { return json_(modifierInvitation_(ss, req.cible, modif, parent ? null : moi)); };
+
+    switch (req.action) {
+      // Ouvert à tous les joueurs (et au détenteur de la clé)
+      case 'donnees':
+        if (!moi && !parent) return refusAucune();
+        return json_({ ok: true, parent: parent, quiz: lire_(ss, 'Quiz'), fiches: lire_(ss, 'Fiches'), frise: lire_(ss, 'Frise') });
+      case 'classement':
+        if (!moi && !parent) return refusAucune();
+        return json_({ ok: true, classement: classement_(ss, moi) });
+      case 'social':
+        if (!moi && !parent) return refusAucune();
+        return json_(social_(ss, moi));
+      case 'creerInvitation':
+        if (!moi && !parent) return refusAucune();
+        return json_(creerInvitation_(ss, req.nom, moi));
+      case 'invitations':
+        if (!moi && !parent) return refusAucune();
+        return json_({ ok: true, invitations: listerInvitations_(ss, parent ? null : moi) });
+      case 'revoquer':
+        if (!moi && !parent) return refusAucune();
+        return changer(function (l) { l[A.statut] = 'révoqué'; });
+      case 'reactiver':
+        if (!moi && !parent) return refusAucune();
+        return changer(function (l) { l[A.statut] = 'actif'; });
+      case 'liberer': // l'invité a changé de téléphone : son lien pourra être réutilisé une fois sur un nouvel appareil
+        if (!moi && !parent) return refusAucune();
+        return changer(function (l) { l[A.appareil] = ''; l[A.active] = ''; l[A.statut] = 'actif'; });
+      // Réservé aux joueurs (il faut un profil)
+      case 'defier':
+        if (!moi) return refusAucune();
+        return json_(defier_(ss, moi, req));
+      case 'repondreDefi':
+        if (!moi) return refusAucune();
+        return json_(repondreDefi_(ss, moi, req.id, req.bons));
+      case 'bravo':
+        if (!moi) return refusAucune();
+        return json_(bravo_(ss, moi, req.partie));
+      case 'resultat':
+        if (!moi) return refusAucune();
+        enregistrerResultat_(ss, moi, req.resume || {}, req.parties || []);
+        return json_({ ok: true });
     }
 
+    // Outils de gestion : clé secrète obligatoire
     if (!parent) return json_({ ok: false, code: 'cle', erreur: 'Clé secrète incorrecte' });
     switch (req.action) {
       case 'test':
@@ -113,18 +132,8 @@ function doPost(e) {
         return json_({ ok: true, ajoutees: ajouter_(ss, req.onglet, req.lignes) });
       case 'pack':
         return json_(installerPack_(ss, req.pack));
-      case 'creerInvitation':
-        return json_(creerInvitation_(ss, req.nom));
-      case 'invitations':
-        return json_({ ok: true, invitations: listerInvitations_(ss) });
       case 'resultats':
         return json_(lireResultats_(ss));
-      case 'revoquer':
-        return json_(modifierInvitation_(ss, req.code, function (l) { l[A.statut] = 'révoqué'; }));
-      case 'reactiver':
-        return json_(modifierInvitation_(ss, req.code, function (l) { l[A.statut] = 'actif'; }));
-      case 'liberer': // l'invité a changé de téléphone : le lien pourra être réactivé sur un nouvel appareil
-        return json_(modifierInvitation_(ss, req.code, function (l) { l[A.appareil] = ''; l[A.active] = ''; l[A.statut] = 'actif'; }));
       default:
         return json_({ ok: false, erreur: 'Action inconnue' });
     }
@@ -164,33 +173,40 @@ function verifierInvitation_(ss, code, appareil) {
   return 'inconnue';
 }
 
-function creerInvitation_(ss, nom) {
+function creerInvitation_(ss, nom, par) {
   nom = String(nom || '').trim();
   if (!nom) throw new Error('Indique le prénom de la personne invitée');
   const code = Utilities.getUuid().replace(/-/g, '').slice(0, 16);
   const sh = ss.getSheetByName('Accès');
-  sh.getRange(sh.getLastRow() + 1, 1, 1, 7).setNumberFormat('@').setValues([[code, nom, '', horodatage_(), '', '', 'actif']]);
+  sh.getRange(sh.getLastRow() + 1, 1, 1, 8).setNumberFormat('@').setValues([[code, nom, '', horodatage_(), '', '', 'actif', par || '']]);
   return { ok: true, code: code, nom: nom };
 }
 
-function listerInvitations_(ss) {
-  return ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1)
-    .filter(function (l) { return l[A.code]; })
+/** Toutes les invitations (par = null, avec la clé) ou seulement celles créées par ce joueur. */
+function listerInvitations_(ss, par) {
+  const lignes = ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).filter(function (l) { return l[A.code]; });
+  const noms = {};
+  lignes.forEach(function (l) { noms[l[A.code]] = l[A.nom]; });
+  return lignes
+    .filter(function (l) { return par === null || l[A.par] === par; })
     .map(function (l) {
-      return { code: l[A.code], nom: l[A.nom], utilise: !!l[A.appareil], cree: l[A.cree], active: l[A.active], visite: l[A.visite], statut: l[A.statut] };
+      return { code: l[A.code], nom: l[A.nom], utilise: !!l[A.appareil], cree: l[A.cree], active: l[A.active], visite: l[A.visite], statut: l[A.statut],
+        par: l[A.par] ? (noms[l[A.par]] || '') : '' };
     });
 }
 
-function modifierInvitation_(ss, code, modif) {
+/** Modifie une invitation ; sans clé (par = code du joueur), seulement une de celles qu'il a créées. */
+function modifierInvitation_(ss, code, modif, par) {
   const sh = ss.getSheetByName('Accès');
   const valeurs = sh.getDataRange().getDisplayValues();
   for (let i = 1; i < valeurs.length; i++) {
-    if (valeurs[i][A.code] === String(code)) {
-      const l = valeurs[i].slice(0, 7);
-      modif(l);
-      sh.getRange(i + 1, 1, 1, 7).setNumberFormat('@').setValues([l]);
-      return { ok: true };
-    }
+    if (valeurs[i][A.code] !== String(code)) continue;
+    if (par !== null && valeurs[i][A.par] !== par) return { ok: false, erreur: "Tu ne peux gérer que les invitations que tu as créées" };
+    const l = valeurs[i].slice(0, 8);
+    while (l.length < 8) l.push('');
+    modif(l);
+    sh.getRange(i + 1, 1, 1, 8).setNumberFormat('@').setValues([l]);
+    return { ok: true };
   }
   return { ok: false, erreur: 'Invitation introuvable' };
 }

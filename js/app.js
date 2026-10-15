@@ -92,7 +92,7 @@
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(P)); } catch (e) { /* stockage indisponible */ } }
   const scriptUrl = () => P.scriptUrl || CONFIG.scriptUrl || "";
   // Mode privé = le script est configuré : les questions passent par lui et ne sont données qu'aux invités.
-  // Le parent (clé secrète sur son appareil) garde toutes les fonctions ; un invité ne voit que les révisions.
+  // Le détenteur de la clé secrète a en plus les outils de gestion (ajout de questions, qualité, résultats de tous).
   const estParent = () => !scriptUrl() || !!P.cle;
 
   // ───────────────────────── Accès sur invitation ─────────────────────────
@@ -112,7 +112,10 @@
     lienUrl.searchParams.delete("invitation"); // le code n'apparaît plus dans la barre d'adresse
     history.replaceState(null, "", lienUrl.pathname + lienUrl.search + lienUrl.hash);
   }
-  try { localStorage.setItem(ACCES_KEY, JSON.stringify(ACCES)); } catch (e) { /* stockage indisponible */ }
+  const sauverAcces = () => { try { localStorage.setItem(ACCES_KEY, JSON.stringify(ACCES)); } catch (e) { /* stockage indisponible */ } };
+  sauverAcces();
+  // Tout joueur (code d'invitation) peut partager ; le détenteur de la clé aussi, même sans profil joueur.
+  const peutPartager = () => !!scriptUrl() && (!!ACCES.code || !!P.cle);
   const lienInvitation = (code) => location.origin + location.pathname + "?invitation=" + encodeURIComponent(code);
 
   function niveau(xp) {
@@ -323,7 +326,7 @@
   async function envoyer(payload) {
     const url = scriptUrl();
     if (!url) throw new Error("Le script Google n'est pas configuré (Statistiques > Réglages).");
-    const rep = await fetch(url, { method: "POST", body: JSON.stringify(Object.assign({ cle: P.cle }, payload)) });
+    const rep = await fetch(url, { method: "POST", body: JSON.stringify(Object.assign({ cle: P.cle, code: ACCES.code || "", appareil: ACCES.appareil }, payload)) });
     const json = await rep.json();
     if (!json.ok) {
       const err = new Error(json.erreur || "Erreur inconnue");
@@ -364,7 +367,8 @@
     ];
     return `<header class="topbar">
         <button class="logo" data-go="accueil">brevetquizz</button><span class="spacer"></span>
-        ${scriptUrl() && P.cle ? `<button class="iconbtn" data-action="onglet" data-onglet="partager" aria-label="Partager l'app">🔗</button>
+        ${peutPartager() ? `<button class="iconbtn" data-action="onglet" data-onglet="partager" aria-label="Partager l'app">🔗</button>` : ""}
+        ${scriptUrl() && P.cle ? `
           <button class="iconbtn" data-action="onglet" data-onglet="eleves" aria-label="Résultats des élèves">📈</button>` : ""}
         ${peutDefier() ? `<button class="iconbtn" data-go="notifs" aria-label="Notifications${n ? ` (${n} nouvelles)` : ""}">🔔<span id="pastille" class="pastille" ${n ? "" : "hidden"}>${n > 9 ? "9+" : n}</span></button>` : ""}
       </header>
@@ -395,7 +399,7 @@
         ? "Chaque lien d'invitation ne fonctionne que sur un seul appareil. Demande un nouveau lien à la personne qui t'a invité."
         : "Demande un lien d'invitation à la personne qui gère l'app."}</p>
       ${vue.cleRefusee ? `<p class="warn">Clé secrète incorrecte.</p>` : ""}
-      <details style="text-align:left" ${vue.cleRefusee ? "open" : ""}><summary class="small muted">Je suis le parent</summary>
+      <details style="text-align:left" ${vue.cleRefusee ? "open" : ""}><summary class="small muted">J'ai la clé de gestion</summary>
         <form data-form="cle-parent" class="stack" style="margin-top:8px">
           <input name="cle" type="password" placeholder="Clé secrète du script" autocomplete="off" required>
           <button class="btn-primary">Entrer</button></form></details></div>`,
@@ -442,9 +446,9 @@
 
       return `
       <div class="stories" role="list" aria-label="Lancer une partie par matière">${stories.join("")}</div>
-      ${scriptUrl() && P.cle ? `<section class="post partage-card">
+      ${peutPartager() ? `<section class="post partage-card">
         <div style="flex:1"><strong>🔗 Partager l'app</strong>
-          <div class="small muted">Crée un lien d'invitation personnel pour ton fils ou un de ses amis.</div></div>
+          <div class="small muted">Invite un ami : crée-lui un lien personnel pour qu'il te rejoigne.</div></div>
         <button class="btn-primary" data-action="onglet" data-onglet="partager">Inviter</button>
       </section>` : ""}
       <section class="me-card">
@@ -599,7 +603,7 @@
         <div class="big-score">${r.bons}/${r.total}</div>
         <p>${msg}</p>
         ${!d && peutDefier() ? `<button class="btn-defier btn-big" data-action="defier">⚔️ Défier un ami avec ce score</button>` : ""}
-        ${!d && scriptUrl() && P.cle ? `<p class="small muted" style="margin:0">⚔️ Les défis se lancent depuis l'app d'un élève invité, pas depuis le compte parent.</p>` : ""}
+        ${!d && scriptUrl() && P.cle && !ACCES.code ? `<button class="btn-defier btn-big" data-action="onglet" data-onglet="partager">🎮 Crée ton profil joueur pour défier tes amis</button>` : ""}
         <p><strong>+${r.xp} XP</strong>${r.niveauUp ? ` · 🎉 Niveau ${niveau(P.xp).n} atteint : ${esc(niveau(P.xp).nom)} !` : ""}</p>
         ${r.nouveauxBadges.length ? `<div class="ok">Nouveau badge : ${r.nouveauxBadges.map((b) => b.ico + " " + esc(b.nom)).join(", ")}</div>` : ""}
         ${quiz.triches ? `<p class="warn" style="margin:0">🚫 ${plural(quiz.triches, "question comptée fausse", "questions comptées fausses")} parce que tu as quitté l'app. Révise au lieu de tricher ! 😉</p>` : ""}
@@ -691,13 +695,14 @@
     parent: () => {
       if (P.pin && !vue.ok) {
         return `${retour("profil", "Profil")}<div class="card stack center"><h2>🔒 Statistiques</h2>
-          <form data-form="pin" class="stack"><input name="pin" type="password" inputmode="numeric" placeholder="Code parent" autocomplete="off">
+          <form data-form="pin" class="stack"><input name="pin" type="password" inputmode="numeric" placeholder="Code" autocomplete="off">
           <button class="btn-primary">Entrer</button></form></div>`;
       }
       const onglet = vue.onglet || "suivi";
       const tabs = [["suivi", "📊 Suivi"]]
         .concat(estParent() ? [["ajouter", "➕ Ajouter"], ["qualite", "🔎 Qualité"]] : [])
-        .concat(scriptUrl() && P.cle ? [["eleves", "📈 Élèves"], ["partager", "🔗 Partager"]] : [])
+        .concat(scriptUrl() && P.cle ? [["eleves", "📈 Élèves"]] : [])
+        .concat(peutPartager() ? [["partager", "🔗 Partager"]] : [])
         .concat([["reglages", "⚙️ Réglages"]]);
       return `${retour("profil", "Profil")}<h1>Statistiques</h1>
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${k === onglet ? "on" : ""}" data-action="onglet" data-onglet="${k}">${l}</button>`).join("")}</div>
@@ -901,9 +906,15 @@
         i.utilise ? `<button class="small" data-action="inv" data-op="liberer" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}" title="Si la personne a changé de téléphone">Nouvel appareil</button>` : ""
       ].join(" ");
       const n = vue.nouveau;
-      return `<form data-form="inviter" class="card">
+      const monProfil = P.cle && !ACCES.code ? `<form data-form="mon-profil" class="card defi-card" style="margin-bottom:12px">
+          <div class="defi-titre">🎮 Joue toi aussi</div>
+          <p class="small" style="margin:0 0 8px">Crée ton profil joueur sur cet appareil : tu apparaîtras dans le fil et le classement, et tu pourras lancer des défis.</p>
+          <label for="mon-nom" style="color:inherit">Ton prénom (visible par les autres)</label>
+          <input id="mon-nom" name="nom" required maxlength="40" value="${esc(P.prenom || "")}">
+          <button class="defi-btn" style="margin-top:10px">Créer mon profil</button></form>` : "";
+      return `${monProfil}<form data-form="inviter" class="card">
           <h3>Inviter quelqu'un</h3>
-          <p class="small muted">Chaque invitation crée un lien personnel qui ne fonctionne que sur <strong>le premier appareil</strong> qui l'ouvre. S'il est transféré à quelqu'un d'autre, il ne marchera pas. Vous pouvez désactiver un accès à tout moment.</p>
+          <p class="small muted">Chaque invitation crée un lien personnel qui ne fonctionne que sur <strong>le premier appareil</strong> qui l'ouvre. S'il est transféré à quelqu'un d'autre, il ne marchera pas. Tu peux désactiver un accès à tout moment.</p>
           <label>Prénom de la personne</label><input name="nom" required maxlength="40" placeholder="Ex : Lucas">
           <button class="btn-primary btn-big" style="margin-top:12px">Créer le lien d'invitation</button></form>
         ${n ? `<div class="card stack" style="margin-top:12px">
@@ -911,11 +922,11 @@
           <input readonly value="${esc(lienInvitation(n.code))}">
           <div class="row"><button class="btn-primary" data-action="copier-lien" data-lien="${esc(lienInvitation(n.code))}">📋 Copier le lien</button>
           ${navigator.share ? `<button data-action="envoyer-lien" data-lien="${esc(lienInvitation(n.code))}">📤 Envoyer…</button>` : ""}</div>
-          <p class="hint">Envoyez-le uniquement à ${esc(n.nom)}. Ne l'ouvrez pas vous-même : il serait lié à votre appareil.</p></div>` : ""}
+          <p class="hint">Envoie-le uniquement à ${esc(n.nom)}. Ne l'ouvre pas toi-même : il serait lié à ton appareil.</p></div>` : ""}
         <div class="card" style="margin-top:12px"><h3>Invitations</h3>
           ${!invs ? `<p class="muted">Chargement…</p>` : !invs.length ? `<p class="muted">Aucune invitation pour l'instant.</p>`
           : `<table><thead><tr><th>Personne</th><th>État</th><th></th></tr></thead><tbody>
-            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong><div class="small muted">créée le ${esc(i.cree)}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
+            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong><div class="small muted">créée le ${esc(i.cree)}${P.cle && i.par ? ` · par ${esc(i.par)}` : ""}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
             </tbody></table>`}
         </div>`;
     },
@@ -939,7 +950,7 @@
     reglagesEleve: () => `<form data-form="reglages" class="card" style="margin-top:12px">
         <h3>Élève</h3>
         <label>Prénom</label><input name="prenom" value="${esc(P.prenom)}" maxlength="30">
-        <label>Code parent (facultatif, protège cet espace)</label><input name="pin" value="${esc(P.pin)}" inputmode="numeric" maxlength="8" autocomplete="off">
+        <label>Code de verrouillage (facultatif, protège cet espace)</label><input name="pin" value="${esc(P.pin)}" inputmode="numeric" maxlength="8" autocomplete="off">
         <button class="btn-primary" style="margin-top:12px">Enregistrer</button>
       </form>
       <div class="card" style="margin-top:12px">
@@ -1153,7 +1164,7 @@
   // En cas d'échec (hors ligne…), les parties restent dans P.envois et repartent la fois suivante.
   let synchroEnCours = false;
   function synchroniser() {
-    if (!scriptUrl() || P.cle || !ACCES.code || synchroEnCours) return Promise.resolve();
+    if (!scriptUrl() || !ACCES.code || synchroEnCours) return Promise.resolve();
     const envoyees = (P.envois || []).length;
     const stats = Object.values(P.stats || {});
     const nv = niveau(P.xp);
@@ -1173,7 +1184,7 @@
   // SOCIAL = réponse de l'action « social » du script (null tant que rien n'est chargé).
   let SOCIAL = null;
   const socialPossible = () => !!scriptUrl() && (!!ACCES.code || !!P.cle);
-  const peutDefier = () => !!scriptUrl() && !!ACCES.code && !P.cle;
+  const peutDefier = () => !!scriptUrl() && !!ACCES.code;
   const nonLues = () => (SOCIAL && SOCIAL.notifs ? SOCIAL.notifs.filter((n) => n.t > (P.notifsVues || 0)).length : 0);
   // Un seul chargement à la fois : un appel pendant un chargement en cours attend le même résultat.
   let socialPromesse = null;
@@ -1270,7 +1281,7 @@
       <div class="row"><h2 style="margin:0">⚔️ Défier un ami</h2><span class="spacer"></span><button type="button" class="btn-ghost" data-action="fermer" aria-label="Fermer">✕</button></div>
       <p class="small muted" style="margin:0">Ton ami rejouera exactement les mêmes ${quiz.questions.length} questions. Il doit battre ton ${quiz.bons}/${quiz.questions.length}.</p>
       ${amis.length ? amis.map((a) => `<label class="ami-choix">${avatar(a.nom)}<span style="flex:1">${esc(a.nom)}</span><input type="checkbox" name="ami" value="${esc(a.id)}"></label>`).join("")
-        : `<p class="muted">Personne d'autre n'est encore invité. Demande au parent de créer une invitation pour tes amis (Profil > Statistiques > Partager).</p>`}
+        : `<p class="muted">Personne d'autre n'est encore invité. Invite tes amis avec le bouton 🔗 Partager de l'accueil.</p>`}
       ${amis.length ? `<button class="btn-primary btn-big">Envoyer le défi 🔥</button>` : ""}
     </form>`;
     m.hidden = false;
@@ -1428,7 +1439,7 @@
         liberer: `${nom} a changé d'appareil ? Son lien pourra être utilisé une fois sur un nouvel appareil (l'ancien perd l'accès).` }[op];
       if (q && !confirm(q)) return;
       el.disabled = true;
-      envoyer({ action: op, code: el.dataset.code })
+      envoyer({ action: op, cible: el.dataset.code })
         .then(() => { toast("✅ C'est fait"); aller("parent", { ok: true, onglet: "partager" }); })
         .catch((e) => { toast("❌ " + e.message, 5000); el.disabled = false; });
     }
@@ -1522,6 +1533,16 @@
     else if (type === "cle-parent") {
       P.cle = String(fd.get("cle")).trim(); save();
       demarrer();
+    }
+    else if (type === "mon-profil") {
+      // Crée une invitation pour soi et l'active tout de suite sur cet appareil.
+      const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Création…";
+      try {
+        const r = await envoyer({ action: "creerInvitation", nom: fd.get("nom") });
+        ACCES.code = r.code; sauverAcces();
+        P.prenom = String(fd.get("nom")).trim() || P.prenom; save();
+        demarrer(() => { toast("🎮 Profil joueur créé : tu peux défier tes amis !"); aller("accueil"); });
+      } catch (e) { toast("❌ " + e.message, 5000); btn.disabled = false; btn.textContent = "Créer mon profil"; }
     }
     else if (type === "inviter") {
       const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Création…";

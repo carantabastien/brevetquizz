@@ -63,7 +63,8 @@ Une fois l'URL du script inscrite dans `js/config.js` (`scriptUrl`), l'app passe
 - Sans invitation, l'app affiche « accessible uniquement sur invitation » et ne montre aucune question.
 - **Statistiques > 🔗 Partager** : saisissez un prénom pour créer un **lien personnel**. Ce lien ne fonctionne que sur **le premier appareil qui l'ouvre**. Transféré à quelqu'un d'autre, il affiche « lien déjà utilisé ».
 - Dans la liste des invitations, vous pouvez **désactiver** un accès (l'app se verrouille sur cet appareil) ou le **réactiver**. Si la personne change de téléphone, le bouton **Nouvel appareil** lui permet de réutiliser son lien une fois sur le nouveau.
-- Seul le parent peut inviter. Sur son propre appareil, il touche « Je suis le parent » sur l'écran verrouillé et saisit la clé secrète du script.
+- **Tout le monde peut inviter** : bouton 🔗 Partager de l'accueil. Chacun gère les invitations qu'il a créées. Avec la clé secrète (« J'ai la clé de gestion » sur l'écran verrouillé), on gère toutes les invitations et on a les outils de gestion : ajout de questions, qualité, résultats de tous.
+- Le détenteur de la clé joue aussi : « 🎮 Joue toi aussi » dans Partager crée son profil joueur, pour défier et apparaître dans le classement.
 - Votre fils a besoin lui aussi d'une invitation, à ouvrir sur son téléphone. Sa progression est conservée.
 - Les invitations sont enregistrées dans l'onglet **Accès** du Google Sheet.
 
