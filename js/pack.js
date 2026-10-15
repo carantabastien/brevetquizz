@@ -1937,6 +1937,882 @@ window.BQ_PACK = {
     "sessanta",
     "6 = sei, 16 = sedici, 17 = diciassette, 60 = sessanta."
    ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Nombres, statistiques et probabilités",
+    "Combien vaut 15 % de 200 ?",
+    "30",
+    "15",
+    "20",
+    "35",
+    "10 % de 200 = 20 et 5 % = 10, donc 15 % = 20 + 10 = 30."
+   ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Nombres, statistiques et probabilités",
+    "Combien vaut 2³ ?",
+    "8",
+    "6",
+    "9",
+    "5",
+    "2³ = 2 × 2 × 2 = 8. Attention : 6 = 2 × 3, ce n'est pas une puissance."
+   ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Nombres, statistiques et probabilités",
+    "Quel est l'arrondi au dixième de 3,46 ?",
+    "3,5",
+    "3,4",
+    "3",
+    "3,6",
+    "On regarde le chiffre des centièmes : 6 ≥ 5, donc on arrondit au-dessus : 3,5."
+   ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Nombres, statistiques et probabilités",
+    "On lance un dé à 6 faces. Quelle est la probabilité d'obtenir un nombre pair ?",
+    "1/2",
+    "1/3",
+    "1/6",
+    "2/3",
+    "Nombres pairs : 2, 4 et 6, soit 3 issues sur 6 : 3/6 = 1/2."
+   ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Géométrie",
+    "Un carré a un côté de 5 cm. Quelle est son aire ?",
+    "25 cm²",
+    "20 cm²",
+    "10 cm²",
+    "25 cm",
+    "Aire du carré = côté × côté = 5 × 5 = 25 cm². 20 cm, c'est son périmètre (4 × 5)."
+   ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Géométrie",
+    "Quelle est la somme des angles d'un triangle ?",
+    "180°",
+    "360°",
+    "90°",
+    "270°",
+    "Dans tout triangle, la somme des trois angles vaut 180°. 360°, c'est pour un quadrilatère."
+   ]
+  },
+  {
+   "ligne": [
+    "Maths",
+    "Calcul littéral et fonctions",
+    "Quel est le développement de 3(x + 4) ?",
+    "3x + 12",
+    "3x + 4",
+    "x + 12",
+    "3x + 7",
+    "On multiplie 3 par chaque terme : 3 × x + 3 × 4 = 3x + 12."
+   ]
+  },
+  {
+   "ligne": [
+    "Français",
+    "Figures de style et registres",
+    "« Le vent hurlait dans la nuit. » Quelle figure de style est utilisée ?",
+    "Une personnification",
+    "Une métaphore",
+    "Une comparaison",
+    "Une hyperbole",
+    "Le vent « hurle » comme un être humain ou un animal : on lui prête un comportement vivant, c'est une personnification."
+   ]
+  },
+  {
+   "ligne": [
+    "Français",
+    "Conjugaison et orthographe",
+    "Quel est le passé simple de « ils prennent » ?",
+    "ils prirent",
+    "ils prenèrent",
+    "ils prendirent",
+    "ils prennirent",
+    "Prendre au passé simple : je pris, tu pris, il prit, nous prîmes, vous prîtes, ils prirent."
+   ]
+  },
+  {
+   "ligne": [
+    "Français",
+    "Grammaire",
+    "Dans « Je lui parle », quelle est la fonction de « lui » ?",
+    "Complément d'objet indirect",
+    "Complément d'objet direct",
+    "Sujet du verbe",
+    "Complément du nom",
+    "On parle À quelqu'un : « lui » remplace « à lui / à elle », c'est un COI."
+   ]
+  },
+  {
+   "ligne": [
+    "Français",
+    "Grammaire",
+    "Lequel de ces mots est un adverbe ?",
+    "rapidement",
+    "rapide",
+    "rapidité",
+    "rapides",
+    "Les adverbes en -ment sont invariables : rapidement. Rapide(s) est un adjectif, rapidité un nom."
+   ]
+  },
+  {
+   "ligne": [
+    "Français",
+    "Grammaire",
+    "« Bien qu'il pleuve, nous sortons. » Que exprime la subordonnée ?",
+    "L'opposition (concession)",
+    "La cause",
+    "La conséquence",
+    "Le but",
+    "« Bien que » introduit une opposition : malgré la pluie, on sort. C'est une concession."
+   ]
+  },
+  {
+   "ligne": [
+    "Français",
+    "Poésie et récit",
+    "Un texte qui défend une opinion avec des arguments est un texte :",
+    "argumentatif",
+    "narratif",
+    "descriptif",
+    "explicatif",
+    "Argumentatif : il cherche à convaincre. Narratif : il raconte ; descriptif : il décrit ; explicatif : il fait comprendre."
+   ]
+  },
+  {
+   "ligne": [
+    "Histoire",
+    "Les guerres mondiales",
+    "Qui unifie les mouvements de la Résistance intérieure en 1943 (Conseil national de la Résistance) ?",
+    "Jean Moulin",
+    "Lucie Aubrac",
+    "Philippe Leclerc",
+    "Georges Clemenceau",
+    "Envoyé par de Gaulle, Jean Moulin unifie la Résistance intérieure et crée le CNR en mai 1943."
+   ]
+  },
+  {
+   "ligne": [
+    "Histoire",
+    "Les guerres mondiales",
+    "En quelle année éclate la grande crise économique mondiale (krach de Wall Street) ?",
+    "1929",
+    "1919",
+    "1933",
+    "1939",
+    "Le krach boursier de Wall Street, en octobre 1929, déclenche une crise économique mondiale."
+   ]
+  },
+  {
+   "ligne": [
+    "Histoire",
+    "Les guerres mondiales",
+    "Qu'est-ce qu'une « guerre totale » ?",
+    "Une guerre qui mobilise soldats, civils, économie et propagande",
+    "Une guerre menée sur tous les continents à la fois",
+    "Une guerre où aucun armistice n'est accepté",
+    "Une guerre menée uniquement par les armées de métier",
+    "Dans une guerre totale, toute la société est mobilisée : les soldats, mais aussi l'industrie, les civils et la propagande."
+   ]
+  },
+  {
+   "ligne": [
+    "Histoire",
+    "La France depuis 1944",
+    "Qui est président de la République de 1959 à 1969 ?",
+    "Charles de Gaulle",
+    "Georges Pompidou",
+    "René Coty",
+    "Vincent Auriol",
+    "De Gaulle, élu fin 1958, est président de janvier 1959 à sa démission en 1969. Pompidou lui succède."
+   ]
+  },
+  {
+   "ligne": [
+    "Histoire",
+    "Guerre froide et décolonisation",
+    "L'OTAN, créée en 1949, est :",
+    "l'alliance militaire du bloc de l'Ouest",
+    "l'alliance militaire du bloc de l'Est",
+    "l'organisation économique des pays européens",
+    "l'organisation chargée de la paix mondiale",
+    "L'OTAN réunit les États-Unis et leurs alliés. Le bloc de l'Est forme le Pacte de Varsovie (1955) ; la paix mondiale, c'est l'ONU."
+   ]
+  },
+  {
+   "ligne": [
+    "Histoire",
+    "La France depuis 1944",
+    "Quelle loi de 1981 abolit la peine de mort en France ?",
+    "La loi Badinter",
+    "La loi Veil",
+    "La loi Neuwirth",
+    "La loi Roudy",
+    "Le garde des Sceaux Robert Badinter fait voter l'abolition de la peine de mort en 1981."
+   ]
+  },
+  {
+   "ligne": [
+    "Géographie",
+    "Les territoires de la France",
+    "Qu'est-ce qu'une métropole ?",
+    "Une grande ville qui concentre habitants, activités et pouvoirs de décision",
+    "Une ville moyenne spécialisée dans le tourisme",
+    "Un ensemble de villages ruraux regroupés",
+    "Une grande ville située obligatoirement sur un littoral",
+    "Une métropole rassemble beaucoup d'habitants, d'emplois et de fonctions de commandement (sièges d'entreprises, universités…)."
+   ]
+  },
+  {
+   "ligne": [
+    "Géographie",
+    "Les territoires de la France",
+    "Quel est le rôle du Conservatoire du littoral ?",
+    "Protéger les espaces naturels des côtes",
+    "Construire de nouveaux ports de commerce",
+    "Développer les stations balnéaires",
+    "Surveiller les frontières maritimes",
+    "Le Conservatoire du littoral achète des terrains en bord de mer pour les protéger de la construction."
+   ]
+  },
+  {
+   "ligne": [
+    "Géographie",
+    "Aménagement, outre-mer, Europe et monde",
+    "Quel territoire ultramarin français se trouve en Amérique du Sud ?",
+    "La Guyane",
+    "La Martinique",
+    "La Réunion",
+    "Mayotte",
+    "La Guyane est en Amérique du Sud. La Martinique est dans les Caraïbes ; La Réunion et Mayotte sont dans l'océan Indien."
+   ]
+  },
+  {
+   "ligne": [
+    "Géographie",
+    "Les territoires de la France",
+    "Qu'est-ce qu'une ZIP (zone industrialo-portuaire) ?",
+    "Un espace qui associe un grand port et des industries",
+    "Un port réservé aux bateaux de plaisance",
+    "Une zone industrielle située en montagne",
+    "Un quartier d'affaires construit près d'une gare",
+    "Exemple : Fos-sur-Mer près de Marseille, où les industries s'installent au bord du port pour recevoir les matières premières."
+   ]
+  },
+  {
+   "ligne": [
+    "Géographie",
+    "Les territoires de la France",
+    "Quelle région française est connue pour ses grandes cultures de céréales ?",
+    "Le Bassin parisien",
+    "Le Massif central",
+    "Les Alpes",
+    "La Corse",
+    "Le Bassin parisien (Beauce, Brie) a de grandes plaines fertiles : blé, maïs, colza. Le Massif central est surtout une région d'élevage."
+   ]
+  },
+  {
+   "ligne": [
+    "Géographie",
+    "Aménagement, outre-mer, Europe et monde",
+    "La construction de lignes de TGV est un exemple :",
+    "d'aménagement du territoire",
+    "de périurbanisation",
+    "de littoralisation",
+    "de désindustrialisation",
+    "Les lignes à grande vitesse relient les régions entre elles : c'est un aménagement du territoire décidé par l'État et les régions."
+   ]
+  },
+  {
+   "ligne": [
+    "EMC",
+    "La République et la citoyenneté",
+    "Quel est le rôle d'un juge ?",
+    "Trancher les litiges en appliquant la loi",
+    "Voter les lois au Parlement",
+    "Diriger la police nationale",
+    "Gouverner le pays avec les ministres",
+    "Le juge fait partie du pouvoir judiciaire : il applique la loi pour régler les conflits et sanctionner les infractions."
+   ]
+  },
+  {
+   "ligne": [
+    "EMC",
+    "La République et la citoyenneté",
+    "Qu'est-ce que le suffrage universel direct ?",
+    "Tous les citoyens élisent eux-mêmes leurs représentants",
+    "Seuls les élus votent pour choisir les dirigeants",
+    "Les citoyens élisent des grands électeurs qui votent ensuite",
+    "Seuls les citoyens qui paient des impôts votent",
+    "Universel : tous les citoyens majeurs votent. Direct : ils élisent eux-mêmes (le Président, les députés…)."
+   ]
+  },
+  {
+   "ligne": [
+    "EMC",
+    "La République et la citoyenneté",
+    "Quel texte international protège les droits des enfants ?",
+    "La Convention internationale des droits de l'enfant",
+    "La Déclaration des droits de l'homme et du citoyen",
+    "La Constitution de la Ve République",
+    "Le traité de Rome",
+    "La Convention internationale des droits de l'enfant a été adoptée par l'ONU en 1989."
+   ]
+  },
+  {
+   "ligne": [
+    "EMC",
+    "La République et la citoyenneté",
+    "Dans la devise républicaine, la fraternité désigne :",
+    "la solidarité entre les citoyens",
+    "le droit de vote pour tous",
+    "l'égalité de tous devant la loi",
+    "la liberté de dire ce que l'on pense",
+    "La fraternité, c'est l'entraide et la solidarité (Sécurité sociale, aide aux plus fragiles…). L'égalité devant la loi, c'est l'égalité."
+   ]
+  },
+  {
+   "ligne": [
+    "EMC",
+    "La République et la citoyenneté",
+    "Qui est le chef des armées en France ?",
+    "Le Président de la République",
+    "Le Premier ministre",
+    "Le ministre des Armées",
+    "Le chef d'état-major des armées",
+    "D'après l'article 15 de la Constitution, le Président de la République est le chef des armées."
+   ]
+  },
+  {
+   "ligne": [
+    "EMC",
+    "La République et la citoyenneté",
+    "Qu'est-ce que le harcèlement scolaire ?",
+    "Des violences ou moqueries répétées contre un élève",
+    "Une dispute ponctuelle entre deux élèves",
+    "Une sanction donnée par l'établissement",
+    "Une moquerie isolée, faite une seule fois",
+    "Le harcèlement, c'est la répétition des violences ou moqueries. C'est un délit ; on peut appeler le 3018."
+   ]
+  },
+  {
+   "ligne": [
+    "Physique-Chimie",
+    "Électricité",
+    "Quelle est l'unité de la puissance ?",
+    "Le watt (W)",
+    "Le joule (J)",
+    "Le volt (V)",
+    "L'ampère (A)",
+    "Puissance en watts. Énergie en joules, tension en volts, intensité en ampères."
+   ]
+  },
+  {
+   "ligne": [
+    "Physique-Chimie",
+    "Chimie",
+    "Quand l'eau liquide se transforme en vapeur, ce changement d'état s'appelle :",
+    "la vaporisation",
+    "la fusion",
+    "la condensation",
+    "la solidification",
+    "Liquide → gaz : vaporisation. Solide → liquide : fusion. Gaz → liquide : condensation. Liquide → solide : solidification."
+   ]
+  },
+  {
+   "ligne": [
+    "Physique-Chimie",
+    "Chimie",
+    "Quand 1 kg de glace fond entièrement, on obtient :",
+    "1 kg d'eau liquide",
+    "un peu moins de 1 kg d'eau",
+    "un peu plus de 1 kg d'eau",
+    "une masse qui dépend de la température",
+    "Lors d'un changement d'état, la masse se conserve : 1 kg de glace donne 1 kg d'eau (seul le volume change)."
+   ]
+  },
+  {
+   "ligne": [
+    "Physique-Chimie",
+    "Chimie",
+    "Quelle est la formule chimique de la molécule d'eau ?",
+    "H₂O",
+    "HO₂",
+    "H₂O₂",
+    "OH",
+    "Une molécule d'eau = 2 atomes d'hydrogène + 1 atome d'oxygène. H₂O₂, c'est l'eau oxygénée."
+   ]
+  },
+  {
+   "ligne": [
+    "Physique-Chimie",
+    "Chimie",
+    "Un ion positif est un atome qui a :",
+    "perdu un ou plusieurs électrons",
+    "gagné un ou plusieurs électrons",
+    "perdu un ou plusieurs protons",
+    "gagné un ou plusieurs neutrons",
+    "Les électrons sont négatifs : en perdre rend l'atome positif (ex : Na⁺). En gagner donne un ion négatif."
+   ]
+  },
+  {
+   "ligne": [
+    "Physique-Chimie",
+    "Mouvement et énergie",
+    "Quelle énergie possède un objet en mouvement ?",
+    "L'énergie cinétique",
+    "L'énergie potentielle",
+    "L'énergie thermique",
+    "L'énergie chimique",
+    "L'énergie cinétique est liée à la vitesse. L'énergie potentielle (de position) est liée à la hauteur."
+   ]
+  },
+  {
+   "ligne": [
+    "SVT",
+    "Génétique",
+    "Où se trouve l'ADN dans une cellule ?",
+    "Dans le noyau",
+    "Dans la membrane",
+    "Dans le sang entre les cellules",
+    "Dans les globules rouges uniquement",
+    "L'ADN, porté par les chromosomes, se trouve dans le noyau de la cellule."
+   ]
+  },
+  {
+   "ligne": [
+    "SVT",
+    "Corps humain et santé",
+    "Quel organe produit l'insuline ?",
+    "Le pancréas",
+    "Le foie",
+    "L'estomac",
+    "Les reins",
+    "Le pancréas fabrique l'insuline, une hormone qui fait baisser le taux de sucre dans le sang."
+   ]
+  },
+  {
+   "ligne": [
+    "SVT",
+    "Corps humain et santé",
+    "Comment appelle-t-on les micro-organismes qui provoquent des maladies ?",
+    "Des agents pathogènes",
+    "Des anticorps",
+    "Des antibiotiques",
+    "Des lymphocytes",
+    "Bactéries et virus pathogènes provoquent les maladies. Anticorps et lymphocytes défendent l'organisme ; les antibiotiques sont des médicaments."
+   ]
+  },
+  {
+   "ligne": [
+    "SVT",
+    "Génétique",
+    "La fécondation, c'est la rencontre :",
+    "d'un ovule et d'un spermatozoïde",
+    "de deux ovules",
+    "de deux spermatozoïdes",
+    "d'une cellule-œuf et d'un spermatozoïde",
+    "La fécondation unit un ovule et un spermatozoïde : elle forme la cellule-œuf (46 chromosomes)."
+   ]
+  },
+  {
+   "ligne": [
+    "SVT",
+    "La Terre et le vivant",
+    "Quel gaz les êtres vivants rejettent-ils quand ils respirent ?",
+    "Le dioxyde de carbone",
+    "Le dioxygène",
+    "Le diazote",
+    "Le dihydrogène",
+    "La respiration consomme du dioxygène et rejette du dioxyde de carbone (CO₂)."
+   ]
+  },
+  {
+   "ligne": [
+    "SVT",
+    "La Terre et le vivant",
+    "Un écosystème est formé :",
+    "d'un milieu de vie et des êtres vivants qui y vivent",
+    "uniquement des êtres vivants d'un même lieu",
+    "uniquement d'un milieu de vie et de son climat",
+    "de tous les individus d'une même espèce",
+    "Écosystème = milieu (sol, eau, climat) + êtres vivants qui y vivent et interagissent."
+   ]
+  },
+  {
+   "ligne": [
+    "Technologie",
+    "Technologie : l'essentiel",
+    "Dans Scratch, quel bloc permet de répéter des instructions ?",
+    "répéter 10 fois",
+    "si … alors",
+    "attendre 1 seconde",
+    "dire Bonjour",
+    "« répéter » est une boucle. « si … alors » est une condition."
+   ]
+  },
+  {
+   "ligne": [
+    "Technologie",
+    "Technologie : l'essentiel",
+    "Quel composant transforme l'énergie électrique en mouvement ?",
+    "Un moteur",
+    "Une lampe",
+    "Une pile",
+    "Un capteur",
+    "Le moteur convertit l'énergie électrique en énergie mécanique. La lampe la convertit en lumière ; la pile la fournit."
+   ]
+  },
+  {
+   "ligne": [
+    "Technologie",
+    "Technologie : l'essentiel",
+    "Le Wi-Fi permet de :",
+    "relier des appareils à un réseau sans fil",
+    "relier des appareils à un réseau avec un câble",
+    "stocker des fichiers sur Internet",
+    "protéger un ordinateur contre les virus",
+    "Le Wi-Fi est une liaison sans fil par ondes radio. Un câble réseau (Ethernet) est une liaison filaire."
+   ]
+  },
+  {
+   "ligne": [
+    "Technologie",
+    "Technologie : l'essentiel",
+    "Un mot de passe solide contient :",
+    "des majuscules, minuscules, chiffres et symboles",
+    "son prénom et sa date de naissance",
+    "uniquement des chiffres faciles à retenir",
+    "un seul mot simple du dictionnaire",
+    "Plus il est long et varié, plus il est difficile à deviner. Jamais d'informations personnelles."
+   ]
+  },
+  {
+   "ligne": [
+    "Technologie",
+    "Technologie : l'essentiel",
+    "Qu'est-ce qu'un algorithme ?",
+    "Une suite d'instructions pour résoudre un problème",
+    "Un langage de programmation",
+    "Un composant électronique",
+    "Un type de fichier informatique",
+    "Un algorithme décrit les étapes à suivre ; on peut ensuite le programmer dans un langage (Scratch, Python…)."
+   ]
+  },
+  {
+   "ligne": [
+    "Technologie",
+    "Technologie : l'essentiel",
+    "Quel matériau est un bon isolant thermique ?",
+    "La laine de verre",
+    "Le cuivre",
+    "L'aluminium",
+    "L'acier",
+    "La laine de verre retient la chaleur. Les métaux (cuivre, aluminium, acier) sont au contraire de bons conducteurs."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « He ___ football every Saturday. »",
+    "plays",
+    "play",
+    "playing",
+    "is play",
+    "Présent simple, 3e personne du singulier (he/she/it) : on ajoute -s → he plays."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Quel est le pluriel de « child » ?",
+    "children",
+    "childs",
+    "childrens",
+    "childes",
+    "Pluriel irrégulier : a child → two children (comme man → men)."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « I ___ my homework yet. »",
+    "haven't finished",
+    "didn't finish",
+    "don't finish",
+    "haven't finish",
+    "« yet » s'emploie avec le present perfect : have + participe passé (finished)."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Que signifie « library » ?",
+    "bibliothèque",
+    "librairie",
+    "liberté",
+    "livre",
+    "Faux ami : library = bibliothèque. Une librairie se dit a bookshop."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « This is the girl ___ won the race. »",
+    "who",
+    "which",
+    "whose",
+    "where",
+    "Pronom relatif pour une personne sujet : who. Which s'emploie pour une chose, whose pour la possession."
+   ]
+  },
+  {
+   "ligne": [
+    "Anglais",
+    "Grammaire et vocabulaire",
+    "Complète : « We must ___ our teeth. »",
+    "brush",
+    "to brush",
+    "brushing",
+    "brushes",
+    "Après un modal (must, can, should…), on met la base verbale sans « to »."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « je veux » ?",
+    "quiero",
+    "quero",
+    "quieres",
+    "querro",
+    "Querer est irrégulier (e → ie) : quiero, quieres, quiere."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Comment conjugue-t-on « ir » (aller) à la 1re personne du présent ?",
+    "voy",
+    "vo",
+    "iro",
+    "va",
+    "Ir : voy, vas, va, vamos, vais, van."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Que signifie « la cara » ?",
+    "le visage",
+    "la carafe",
+    "la carte",
+    "le caractère",
+    "La cara = le visage. Attention aux mots qui se ressemblent."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Complète : « Los niños ___ en el parque. » (jugar)",
+    "juegan",
+    "jugan",
+    "juega",
+    "jueguen",
+    "Jugar est irrégulier (u → ue) : juego, juegas, juega, jugamos, jugáis, juegan."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « il fait froid » ?",
+    "Hace frío.",
+    "Hay frío.",
+    "Está frío.",
+    "Es frío.",
+    "Pour la météo, on utilise hacer : hace frío, hace calor, hace sol."
+   ]
+  },
+  {
+   "ligne": [
+    "Espagnol",
+    "Grammaire et vocabulaire",
+    "Quel est le féminin de « el profesor » ?",
+    "la profesora",
+    "la profesor",
+    "la profesoria",
+    "la profesa",
+    "Les noms en -or font leur féminin en -ora : el profesor → la profesora."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Quel est le pluriel de « das Kind » ?",
+    "die Kinder",
+    "die Kinds",
+    "die Kinden",
+    "die Kindes",
+    "Das Kind → die Kinder. Au pluriel, l'article est toujours « die »."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Complète : « Wir ___ ins Kino. » (gehen)",
+    "gehen",
+    "geht",
+    "gehst",
+    "gehe",
+    "Wir (nous) → terminaison -en : wir gehen. Geht = er/ihr, gehst = du, gehe = ich."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Que signifie « die Schule » ?",
+    "l'école",
+    "l'épaule",
+    "la chaussure",
+    "la classe",
+    "Die Schule = l'école. L'épaule = die Schulter, la chaussure = der Schuh, la classe = die Klasse."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « j'aime jouer au foot » ?",
+    "Ich spiele gern Fußball.",
+    "Ich gern spiele Fußball.",
+    "Ich spiele Fußball gern zu.",
+    "Ich mag spielen Fußball.",
+    "Aimer faire quelque chose : verbe + gern. Le verbe conjugué reste en 2e position."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Quel mot interrogatif signifie « où » ?",
+    "wo",
+    "wer",
+    "was",
+    "wann",
+    "Wo = où, wer = qui, was = quoi, wann = quand."
+   ]
+  },
+  {
+   "ligne": [
+    "Allemand",
+    "Grammaire et vocabulaire",
+    "Complète : « Er ___ einen Hund. » (haben)",
+    "hat",
+    "habt",
+    "hast",
+    "haben",
+    "Haben : ich habe, du hast, er hat, wir haben, ihr habt, sie haben."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « bonjour » en italien ?",
+    "buongiorno",
+    "buonasera",
+    "buonanotte",
+    "arrivederci",
+    "Buongiorno = bonjour. Buonasera = bonsoir, buonanotte = bonne nuit, arrivederci = au revoir."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Complète : « Noi ___ italiano. » (parlare)",
+    "parliamo",
+    "parlate",
+    "parlano",
+    "parlamo",
+    "Parlare : parlo, parli, parla, parliamo, parlate, parlano."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Que signifie « la scuola » ?",
+    "l'école",
+    "l'escalier",
+    "l'écurie",
+    "la soucoupe",
+    "La scuola = l'école. L'escalier se dit la scala."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Quel est le pluriel de « la casa » ?",
+    "le case",
+    "le casa",
+    "la case",
+    "i case",
+    "Féminin en -a → pluriel en -e, et la → le : la casa → le case."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Comment dit-on « j'ai 14 ans » ?",
+    "Ho 14 anni.",
+    "Sono 14 anni.",
+    "Ho 14 anno.",
+    "Ho 14 ani.",
+    "Comme en français, on utilise avere : ho 14 anni (anno au singulier, anni au pluriel)."
+   ]
+  },
+  {
+   "ligne": [
+    "Italien",
+    "Grammaire et vocabulaire",
+    "Que signifie « domani » ?",
+    "demain",
+    "dimanche",
+    "hier",
+    "aujourd'hui",
+    "Domani = demain. Dimanche = domenica, hier = ieri, aujourd'hui = oggi."
+   ]
   }
  ],
  "fiches": [

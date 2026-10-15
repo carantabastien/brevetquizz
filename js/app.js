@@ -272,31 +272,22 @@
     return Object.assign({}, q, { choix: shuffle([q.bonne].concat(q.pieges)) });
   }
 
-  // Tire n questions jamais vues, à tour de rôle dans chaque groupe (une matière = un groupe)
-  // pour que le mélange soit équilibré. Quand tout a été vu, on recommence un nouveau cycle.
+  // Tire n questions à tour de rôle dans chaque groupe (une matière = un groupe) pour un mélange équilibré.
+  // Ordre de priorité : jamais vues d'abord, puis celles vues il y a le plus longtemps (P.vues garde
+  // l'heure de la dernière fois). Une question revient donc le plus tard possible.
   function tirer(groupes, n) {
-    let cycle = false;
-    const listes = groupes.filter((g) => g.length).map((pool) => ({ pool, reste: shuffle(pool.filter((q) => !P.vues[q.id])) }));
+    const vu = (q) => P.vues[q.id] || 0; // 0 = jamais vue ; les anciennes données valent 1 (vues il y a longtemps)
+    const listes = groupes.filter((g) => g.length).map((pool) => shuffle(pool).sort((a, b) => vu(a) - vu(b)));
     const pris = [];
-    while (pris.length < n) {
-      let avance = false;
+    while (pris.length < n && listes.some((l) => l.length)) {
       for (const l of listes) {
         if (pris.length >= n) break;
-        if (l.reste.length) { pris.push(l.reste.shift()); avance = true; }
+        if (l.length) pris.push(l.shift());
       }
-      if (avance) continue;
-      // Plus aucune question jamais vue : nouveau tour, sans reprendre celles déjà tirées.
-      cycle = true;
-      const ids = new Set(pris.map((q) => q.id));
-      listes.forEach((l) => {
-        l.pool.forEach((q) => { if (!ids.has(q.id)) delete P.vues[q.id]; });
-        l.reste = shuffle(l.pool.filter((q) => !ids.has(q.id)));
-      });
-      if (listes.every((l) => !l.reste.length)) break;
     }
-    if (cycle) save();
-    return { questions: shuffle(pris).map(preparer), cycle };
+    return { questions: shuffle(pris).map(preparer), cycle: pris.some((q) => vu(q)) };
   }
+
 
   // ───────────────────────── Contrôle qualité des réponses ─────────────────────────
   function qualite(bonne, pieges) {
@@ -561,7 +552,7 @@
         <div class="progress"><span style="width:${(quiz.i + (fini ? 1 : 0)) / quiz.questions.length * 100}%"></span></div>
         <span class="small muted">${quiz.i + 1}/${quiz.questions.length}</span>
       </div>
-      ${quiz.cycle && quiz.i === 0 && !fini ? `<p class="ok">🔄 Tu as vu toutes les questions de cette sélection : nouveau tour !</p>` : ""}
+      ${quiz.cycle && quiz.i === 0 && !fini ? `<p class="ok">🔄 Tu as déjà vu toutes les questions nouvelles : on reprend celles que tu as vues il y a le plus longtemps.</p>` : ""}
       ${quiz.i === 0 && !fini ? `<p class="warn">📵 Reste dans l'app : ${quiz.defi
         ? "en défi, si tu la quittes pendant une question, ta réponse est comptée fausse."
         : "si tu la quittes pendant une question, elle est remplacée la 1re fois (un appel, ça arrive), puis comptée fausse."}</p>` : ""}
@@ -1072,7 +1063,7 @@
   // La question abandonnée est marquée vue : elle ne revient pas tout de suite.
   function remplacerQuestion() {
     const q = quiz.questions[quiz.i];
-    P.vues[q.id] = 1; save();
+    P.vues[q.id] = Date.now(); save();
     const deja = new Set(quiz.questions.map((x) => x.id));
     const pool = q.type ? questionsFrise() : D.quiz.filter((x) => x.matiere === q.matiere);
     const candidats = shuffle(pool.filter((x) => !deja.has(x.id)));
@@ -1093,7 +1084,7 @@
     quiz.repondu = choix;
     const ok = choix === q.bonne;
     const m = q.type ? "Dates (frise)" : q.matiere;
-    P.vues[q.id] = 1;
+    P.vues[q.id] = Date.now();
     P.repondues++;
     P.stats[m] = P.stats[m] || { ok: 0, total: 0 };
     P.stats[m].total++;
