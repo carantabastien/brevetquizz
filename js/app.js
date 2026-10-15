@@ -1324,6 +1324,67 @@
   }
   function fermerModale() { const m = document.getElementById("modal"); m.hidden = true; m.innerHTML = ""; }
 
+  // ───────────────────────── Vérification des réponses par Claude ─────────────────────────
+  // Fenêtre de choix : résout la promesse avec la valeur du bouton touché (null si on ferme).
+  let resoudreChoix = null;
+  function choix(titre, html, boutons) {
+    const m = document.getElementById("modal");
+    m.innerHTML = `<div class="sheet stack" role="alertdialog" aria-label="${esc(titre)}">
+      <h2 style="margin:0">${esc(titre)}</h2>${html}
+      ${boutons.map(([val, lab], i) => `<button class="${i === 0 ? "btn-primary " : ""}btn-big" data-action="choix" data-val="${esc(val)}">${esc(lab)}</button>`).join("")}</div>`;
+    m.hidden = false;
+    return new Promise((res) => { resoudreChoix = res; });
+  }
+  // Ligne Quiz corrigée : si la vraie réponse est l'un des pièges, on les échange ; sinon elle remplace la bonne réponse.
+  function corrigerLigne(l, correction) {
+    const n = l.slice();
+    const k = [4, 5, 6].find((j) => norm(n[j]) === norm(correction));
+    if (k) { const t = n[3]; n[3] = n[k]; n[k] = t; } else n[3] = correction;
+    return n;
+  }
+  // Fait vérifier par Claude (via le script) que chaque bonne réponse est juste.
+  // Renvoie les lignes à ajouter (éventuellement corrigées), ou null si l'ajout est annulé.
+  async function verifierAvantAjout(lignes) {
+    if (!scriptUrl() || !P.cle) return lignes;
+    const m = document.getElementById("modal");
+    m.innerHTML = `<div class="sheet stack center"><div style="font-size:2.5rem">🔍</div>
+      <h2 style="margin:0">Vérification en cours…</h2>
+      <p class="muted" style="margin:0">Claude vérifie que ${lignes.length > 1 ? `les ${lignes.length} bonnes réponses sont` : "la bonne réponse est"} vraiment justes. Ça prend quelques secondes.</p></div>`;
+    m.hidden = false;
+    let res;
+    try {
+      res = (await envoyer({ action: "verifier", questions: lignes.map((l) => ({ matiere: l[0], question: l[2], bonne: l[3], pieges: [l[4], l[5], l[6]], explication: l[7] })) })).resultats;
+    } catch (e) {
+      const c = await choix("⚠️ Vérification impossible", `<p class="muted" style="margin:0">${esc(e.message)}</p>`, [["ajouter", "Ajouter sans vérifier"], ["annuler", "Annuler"]]);
+      fermerModale();
+      return c === "ajouter" ? lignes : null;
+    }
+    const problemes = res.map((r, i) => ({ r, i })).filter((x) => x.r.verdict !== "ok");
+    if (!problemes.length) { fermerModale(); toast(lignes.length > 1 ? `✅ ${lignes.length} réponses vérifiées` : "✅ Réponse vérifiée"); return lignes; }
+    let c;
+    if (lignes.length === 1) {
+      const r = res[0];
+      const titre = { erreur: "⚠️ La bonne réponse semble fausse", ambigu: "⚠️ Plusieurs réponses semblent justes" }[r.verdict] || "⚠️ Vérification impossible";
+      c = await choix(titre,
+        `${r.verdict === "erreur" && r.correction ? `<p style="margin:0">Réponse juste selon Claude : <strong>${esc(r.correction)}</strong></p>` : ""}
+         ${r.commentaire ? `<p class="muted" style="margin:0">${esc(r.commentaire)}</p>` : ""}`,
+        (r.verdict === "erreur" && r.correction ? [["corriger", `Corriger avec « ${r.correction} »`]] : [])
+          .concat([["modifier", "Modifier la question"], ["ajouter", "Ajouter quand même"]]));
+      fermerModale();
+      if (c === "corriger") { toast("✅ Réponse corrigée"); return [corrigerLigne(lignes[0], r.correction)]; }
+      return c === "ajouter" ? lignes : null;
+    }
+    c = await choix(`⚠️ ${problemes.length} question${problemes.length > 1 ? "s" : ""} à revoir sur ${lignes.length}`,
+      `<ul class="fiche-points" style="margin:0">${problemes.map(({ r, i }) => `<li><strong>${esc(lignes[i][2])}</strong><br>
+        <span class="small">${r.verdict === "erreur" && r.correction ? `Réponse juste : « ${esc(r.correction)} ». ` : r.verdict === "ambigu" ? "Plusieurs réponses semblent justes. " : ""}${esc(r.commentaire)}</span></li>`).join("")}</ul>`,
+      [["corriger", "Corriger ce qui peut l'être et ajouter"], ["sures", "Ajouter seulement les questions vérifiées"], ["tout", "Tout ajouter quand même"], ["annuler", "Annuler"]]);
+    fermerModale();
+    if (c === "tout") return lignes;
+    if (c === "sures") return lignes.filter((_, i) => res[i].verdict === "ok");
+    if (c === "corriger") return lignes.map((l, i) => (res[i].verdict === "ok" ? l : res[i].verdict === "erreur" && res[i].correction ? corrigerLigne(l, res[i].correction) : null)).filter(Boolean);
+    return null;
+  }
+
   // ───────────────────────── Ajouts (parent) ─────────────────────────
   function lireMatiere(fd) { return fd.get("matiere") === "__autre" ? String(fd.get("autre") || "").trim() : fd.get("matiere"); }
 
@@ -1359,7 +1420,7 @@
 
   // ───────────────────────── Événements ─────────────────────────
   document.addEventListener("click", (ev) => {
-    if (ev.target.id === "modal") { fermerModale(); return; }
+    if (ev.target.id === "modal") { fermerModale(); if (resoudreChoix) { const r = resoudreChoix; resoudreChoix = null; r(null); } return; }
     const el = ev.target.closest("[data-go],[data-action]");
     if (!el || el.tagName === "INPUT" || el.tagName === "SELECT") return;
     if (el.dataset.go) {
@@ -1402,6 +1463,7 @@
       const depuisParent = vue.nom === "parent";
       demarrer(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); });
     }
+    else if (a === "choix") { const r = resoudreChoix; resoudreChoix = null; if (r) r(el.dataset.val); }
     else if (a === "regles-ok") {
       const c = document.getElementById("regles-masquer");
       if (c && c.checked) { P.reglesMasquees = true; save(); }
@@ -1567,7 +1629,9 @@
       const w = qualite(fd.get("bonne"), pieges);
       if (w.length && !confirm("Attention :\n- " + w.join("\n- ") + "\n\nAjouter quand même ?")) return;
       vue.mat = mat;
-      await ajouterLignes("Quiz", [[mat, fd.get("theme"), fd.get("question"), fd.get("bonne"), pieges[0], pieges[1], pieges[2], fd.get("explication")]], () => {
+      const verifiees = await verifierAvantAjout([[mat, fd.get("theme"), fd.get("question"), fd.get("bonne"), pieges[0], pieges[1], pieges[2], fd.get("explication")]]);
+      if (!verifiees || !verifiees.length) return;
+      await ajouterLignes("Quiz", verifiees, () => {
         ["question", "bonne", "p1", "p2", "p3", "explication"].forEach((n) => { f[n].value = ""; });
         document.getElementById("qual").innerHTML = "";
       });
@@ -1585,7 +1649,9 @@
       const onglet = fd.get("onglet");
       const ls = parserCollage(String(fd.get("lignes")), { Quiz: 8, Fiches: 4, Frise: 3 }[onglet]);
       if (!ls.length) { toast("Aucune ligne détectée"); return; }
-      await ajouterLignes(onglet, ls, () => { f.lignes.value = ""; document.getElementById("apercu").innerHTML = ""; });
+      const aAjouter = onglet === "Quiz" ? await verifierAvantAjout(ls) : ls;
+      if (!aAjouter || !aAjouter.length) return;
+      await ajouterLignes(onglet, aAjouter, () => { f.lignes.value = ""; document.getElementById("apercu").innerHTML = ""; });
     }
   });
   document.addEventListener("keydown", (ev) => {

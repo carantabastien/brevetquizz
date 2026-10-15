@@ -65,6 +65,13 @@ function doPost(e) {
   try { req = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, erreur: 'Requête illisible' }); }
   const parent = req.cle === CLE_SECRETE;
 
+  // Vérification des réponses par Claude : hors du verrou (appel long), réservée au détenteur de la clé.
+  if (req.action === 'verifier') {
+    if (!parent) return json_({ ok: false, code: 'cle', erreur: 'Clé secrète incorrecte' });
+    try { return json_(verifierQuestions_(req.questions || [])); }
+    catch (err) { return json_({ ok: false, erreur: String(err) }); }
+  }
+
   const verrou = LockService.getScriptLock();
   verrou.waitLock(20000);
   try {
@@ -236,6 +243,72 @@ function enregistrerResultat_(ss, code, r, parties) {
     const h = ss.getSheetByName('Historique');
     h.getRange(h.getLastRow() + 1, 1, lignes.length, 7).setNumberFormat('@').setValues(lignes);
   }
+}
+
+/**
+ * Vérifie avec Claude que la « bonne réponse » de chaque question est juste et qu'aucun piège ne l'est aussi.
+ * La clé d'API Anthropic se range dans Paramètres du projet (⚙️) > Propriétés du script > ANTHROPIC_API_KEY.
+ * Renvoie { ok, resultats: [{ verdict: 'ok' | 'erreur' | 'ambigu' | 'inconnu', correction, commentaire }] }.
+ */
+const SCHEMA_VERIF = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['ok', 'erreur', 'ambigu'] },
+    correction: { type: 'string' },
+    commentaire: { type: 'string' }
+  },
+  required: ['verdict', 'correction', 'commentaire'],
+  additionalProperties: false
+};
+const CONSIGNE_VERIF =
+  "Tu vérifies des questions de quiz de révision du brevet des collèges (classe de 3e, programme français). " +
+  "Pour la question donnée, dis si la réponse marquée comme bonne est exacte. " +
+  "verdict = \"ok\" si elle est exacte et qu'aucune des mauvaises réponses n'est aussi acceptable ; " +
+  "\"erreur\" si la réponse marquée bonne est fausse (mets alors dans correction le texte exact de la réponse juste, " +
+  "en reprenant mot pour mot l'une des mauvaises réponses si l'une d'elles est la bonne, sinon la réponse juste en quelques mots) ; " +
+  "\"ambigu\" si plusieurs réponses peuvent être considérées comme justes ou si la question est mal posée. " +
+  "correction est vide si verdict = \"ok\". commentaire : une ou deux phrases simples en français expliquant pourquoi " +
+  "(vide si tout est correct). Vérifie aussi que l'explication fournie ne contient pas d'erreur et signale-la dans commentaire si besoin.";
+
+function verifierQuestions_(questions) {
+  const cle = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!cle) return { ok: false, code: 'sans_cle_api', erreur: "Vérification indisponible : la clé d'API Anthropic n'est pas configurée dans le script." };
+  const liste = questions.slice(0, 30);
+  const requetes = liste.map(function (q) {
+    return {
+      url: 'https://api.anthropic.com/v1/messages',
+      method: 'post',
+      contentType: 'application/json',
+      muteHttpExceptions: true,
+      headers: { 'x-api-key': cle, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      payload: JSON.stringify({
+        model: 'claude-opus-5-5',
+        max_tokens: 16000,
+        fallbacks: 'default',
+        output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA_VERIF } },
+        system: CONSIGNE_VERIF,
+        messages: [{ role: 'user', content: JSON.stringify({
+          matiere: String(q.matiere || ''), question: String(q.question || ''),
+          bonne_reponse: String(q.bonne || ''), mauvaises_reponses: (q.pieges || []).map(String),
+          explication: String(q.explication || '')
+        }) }]
+      })
+    };
+  });
+  const reponses = UrlFetchApp.fetchAll(requetes);
+  const resultats = reponses.map(function (r) {
+    try {
+      const corps = JSON.parse(r.getContentText());
+      if (r.getResponseCode() !== 200) return { verdict: 'inconnu', correction: '', commentaire: (corps.error && corps.error.message) || ('Erreur ' + r.getResponseCode()) };
+      if (corps.stop_reason === 'refusal') return { verdict: 'inconnu', correction: '', commentaire: 'Vérification refusée pour cette question.' };
+      const texte = (corps.content || []).filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('');
+      const v = JSON.parse(texte);
+      return { verdict: v.verdict, correction: v.correction || '', commentaire: v.commentaire || '' };
+    } catch (e) {
+      return { verdict: 'inconnu', correction: '', commentaire: 'Réponse de vérification illisible.' };
+    }
+  });
+  return { ok: true, resultats: resultats };
 }
 
 /** Identifiant public d'un invité : sert à désigner un ami sans jamais révéler son code d'invitation. */

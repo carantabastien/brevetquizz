@@ -82,6 +82,15 @@ Pour que ce soit vraiment privé, passez le partage du Google Sheet en **« Acc�
 
 *Limites* : un invité peut toujours prêter son téléphone ou faire des captures d'écran. Le code de l'app et le pack de questions (`js/pack.js`) restent visibles sur GitHub, puisque le repo est public. Un invité hors ligne garde l'accès 7 jours au plus sans nouvelle vérification.
 
+### Vérification automatique des réponses (Claude)
+À chaque ajout de question depuis l'app, Claude vérifie que la bonne réponse est juste et qu'aucun piège ne l'est aussi. En cas de doute, l'app propose de corriger, de modifier ou d'ajouter quand même.
+
+Il faut une clé d'API Anthropic (payante, environ 1 à 3 centimes par question vérifiée) :
+1. Sur https://console.anthropic.com : créez un compte, ajoutez un moyen de paiement, puis **API Keys > Create Key**. Copiez la clé (elle commence par `sk-ant-`).
+2. Dans Apps Script : **⚙️ Paramètres du projet > Propriétés du script > Ajouter une propriété**. Nom : `ANTHROPIC_API_KEY`, valeur : la clé. Enregistrez.
+
+La clé reste cachée dans le script : elle n'apparaît ni dans l'app ni sur GitHub.
+
 ### Créer des questions à partir de ses cours
 Prenez son cours en photo ou copiez-le, puis demandez à Claude par exemple :
 > « Fais 15 questions de brevet sur ce cours, en tableau avec les colonnes Matière | Thème | Question | Bonne réponse | Mauvaise réponse 1 | Mauvaise réponse 2 | Mauvaise réponse 3 | Explication. Les mauvaises réponses doivent être très proches de la bonne, de même forme et de même longueur. »
