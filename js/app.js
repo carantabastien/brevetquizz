@@ -421,14 +421,14 @@
       const item = (x) => x.type === "defi"
         ? `<article class="post">
             <div class="post-head"><span class="avatar" style="background:#D4537E">⚔️</span>
-              <div><strong>${esc(x.pour)}</strong> a relevé le défi de <strong>${esc(x.de)}</strong>
+              <div><strong>${nomEnLigne(x.pour)}</strong> a relevé le défi de <strong>${nomEnLigne(x.de)}</strong>
               <div class="small muted">${esc(x.matieres)} · ${ilya(x.date)}</div></div></div>
             <div class="duel"><span><strong>${x.score}/${x.total}</strong><br><span class="small muted">${esc(x.pour)}</span></span><span class="vs">VS</span><span><strong>${x.bons}/${x.total}</strong><br><span class="small muted">${esc(x.de)}</span></span></div>
             <div class="small" style="text-align:center">${x.score > x.bons ? `🏆 ${esc(x.pour)} gagne !` : x.score === x.bons ? "🤝 Égalité !" : `🏆 ${esc(x.de)} garde la victoire !`}</div>
           </article>`
         : `<article class="post">
             <div class="post-head">${avatar(x.nom)}
-              <div style="flex:1"><strong>${x.moi ? "Tu" : esc(x.nom)}</strong> ${x.moi ? "as fait" : "a fait"} <strong>${x.bons}/${x.total}</strong>${x.matieres ? ` en ${esc(x.matieres)}` : ""}${x.total && x.bons === x.total ? " 💯" : x.total && x.bons / x.total >= .8 ? " ⭐" : ""}
+              <div style="flex:1"><strong>${x.moi ? "Tu" : nomEnLigne(x.nom)}</strong> ${x.moi ? "as fait" : "a fait"} <strong>${x.bons}/${x.total}</strong>${x.matieres ? ` en ${esc(x.matieres)}` : ""}${x.total && x.bons === x.total ? " 💯" : x.total && x.bons / x.total >= .8 ? " ⭐" : ""}
               <div class="small muted">${ilya(x.date)}</div></div></div>
             ${x.moi || !peutDefier()
               ? (x.bravos ? `<div class="post-actions"><span class="small muted">❤️ ${plural(x.bravos, "bravo")}</span></div>` : "")
@@ -442,8 +442,9 @@
           <div class="small muted">Invite un ami : crée-lui un lien personnel pour qu'il te rejoigne.</div></div>
         <button class="btn-primary" data-action="onglet" data-onglet="partager">Inviter</button>
       </section>` : ""}
+      ${enLigneMaintenant()}
       <section class="me-card">
-        ${avatar(P.prenom)}
+        ${avatarMoi()}
         <div style="flex:1;min-width:0">
           <div><strong>Salut ${esc(P.prenom)} 👋</strong></div>
           <div class="small muted">Niveau ${nv.n} · ${esc(nv.nom)} · 🔥 ${plural(serieActuelle(), "jour")}</div>
@@ -452,7 +453,7 @@
       </section>
       ${D.horsLigne ? `<p class="warn">📴 Hors connexion : révisions chargées le ${D.charge.toLocaleDateString("fr-FR")}.</p>` : ""}
       ${defis.map((d) => `<article class="defi-card">
-          <div class="small" style="opacity:.9">🔥 Défi lancé par ${esc(d.de)} · ${ilya(d.date)}</div>
+          <div class="small" style="opacity:.9">🔥 Défi lancé par ${nomEnLigne(d.de)} · ${ilya(d.date)}</div>
           <div class="defi-titre">Bats son ${d.bons}/${d.total}${d.matieres ? ` en ${esc(d.matieres)}` : ""}</div>
           <button class="defi-btn" data-action="relever" data-defi="${esc(d.id)}">Relever le défi</button>
         </article>`).join("")}
@@ -470,7 +471,11 @@
       const nbBadges = Object.keys(P.badges).length;
       const envoyes = SOCIAL && SOCIAL.envoyes ? SOCIAL.envoyes.slice().reverse().slice(0, 10) : [];
       return `<section class="post center">
-          <div style="display:flex;justify-content:center">${avatar(P.prenom).replace('class="avatar"', 'class="avatar avatar-xl"')}</div>
+          <div style="display:flex;justify-content:center">${avatarMoi(true)}</div>
+          ${peutDefier() ? `<div class="row" style="justify-content:center;gap:8px;margin-top:8px">
+            <label class="btn small" for="photo-input">📷 ${P.photo ? "Changer ma photo" : "Ajouter une photo"}</label>
+            <input type="file" id="photo-input" accept="image/*" data-action="photo" hidden>
+            ${P.photo ? `<button class="small btn-ghost" data-action="retirer-photo">Retirer</button>` : ""}</div>` : ""}
           <h2 style="margin:8px 0 0">${esc(P.prenom)}</h2>
           <div class="small muted">Niveau ${nv.n} · ${esc(nv.nom)}</div>
           <div class="xpbar" style="margin:10px auto;max-width:260px"><span style="width:${nv.pct}%"></span></div>
@@ -489,7 +494,7 @@
         </div>
         ${envoyes.length ? `<div class="post"><h3>⚔️ Mes défis envoyés</h3>
           ${envoyes.map((d) => `<div class="row" style="padding:6px 0;border-top:1px solid var(--line)">${avatar(d.pour)}
-            <span style="flex:1">${esc(d.pour)} <span class="small muted">· ${esc(d.matieres)} · ton ${d.bons}/${d.total}</span></span>
+            <span style="flex:1">${nomEnLigne(d.pour)} <span class="small muted">· ${esc(d.matieres)} · ton ${d.bons}/${d.total}</span></span>
             <span class="small">${d.statut === "relevé" ? `${d.score}/${d.total} · ${d.score > d.bons ? "perdu" : d.score === d.bons ? "égalité" : "gagné 🏆"}` : "⏳ en attente"}</span></div>`).join("")}</div>` : ""}`;
     },
 
@@ -667,7 +672,7 @@
           <div class="card">
             ${classes.length ? classes.map((x) => `<div class="cl-row ${x.moi ? "cl-moi" : ""}">
                 <div class="cl-rang">${medaille(x.rang)}</div>
-                <div class="cl-nom"><strong>${esc(x.nom)}</strong>${x.moi ? ` <span class="tag">toi</span>` : ""}<div class="small muted">${x.repondues} réponses · ${x.parties} parties</div></div>
+                <div class="cl-nom"><strong>${esc(x.nom)}</strong>${x.enLigne ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : ""}${x.moi ? ` <span class="tag">toi</span>` : ""}<div class="small muted">${x.repondues} réponses · ${x.parties} parties</div></div>
                 <div class="cl-val">${x.reussite} %</div>
               </div>`).join("")
             : `<p class="muted center">Personne n'est encore classé. Le premier à ${MIN} réponses prend la tête ! 🚀</p>`}
@@ -894,6 +899,7 @@
         i.statut === "actif" && !i.utilise ? `<button class="small" data-action="copier-lien" data-lien="${esc(lienInvitation(i.code))}">📋 Lien</button>` : "",
         i.statut === "actif" ? `<button class="small" data-action="inv" data-op="revoquer" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}" style="color:var(--bad)">Désactiver</button>`
           : `<button class="small" data-action="inv" data-op="reactiver" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}">Réactiver</button>`,
+        i.photo ? `<button class="small" data-action="inv" data-op="retirerPhoto" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}">Retirer la photo</button>` : "",
         i.utilise ? `<button class="small" data-action="inv" data-op="liberer" data-code="${esc(i.code)}" data-nom="${esc(i.nom)}" title="Si la personne a changé de téléphone">Nouvel appareil</button>` : ""
       ].join(" ");
       const n = vue.nouveau;
@@ -917,7 +923,7 @@
         <div class="card" style="margin-top:12px"><h3>Invitations</h3>
           ${!invs ? `<p class="muted">Chargement…</p>` : !invs.length ? `<p class="muted">Aucune invitation pour l'instant.</p>`
           : `<table><thead><tr><th>Personne</th><th>État</th><th></th></tr></thead><tbody>
-            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong><div class="small muted">créée le ${esc(i.cree)}${P.cle && i.par ? ` · par ${esc(i.par)}` : ""}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
+            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong>${i.enLigne ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : ""}<div class="small muted">créée le ${esc(i.cree)}${P.cle && i.par ? ` · par ${esc(i.par)}` : ""}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
             </tbody></table>`}
         </div>`;
     },
@@ -1190,6 +1196,7 @@
       await envoyerReponsesDefis();
       const avant = nonLues();
       SOCIAL = await envoyer({ action: "social", code: ACCES.code || "", appareil: ACCES.appareil });
+      if (SOCIAL && SOCIAL.moi && SOCIAL.moi.photo !== undefined && SOCIAL.moi.photo !== (P.photo || "")) { P.photo = SOCIAL.moi.photo; save(); }
       const apres = nonLues();
       // Alerte système si une nouvelle notification arrive pendant que l'app est en arrière-plan.
       if (apres > avant && document.hidden && "Notification" in window && Notification.permission === "granted") {
@@ -1238,11 +1245,29 @@
     const j = Math.round(min / 1440);
     return j === 1 ? "hier" : j < 7 ? `il y a ${j} jours` : `le ${m[1]}/${m[2]}`;
   }
-  const avatar = (nom) => {
+  // Profil d'un joueur (photo, présence) d'après le fil chargé, retrouvé par son prénom.
+  const profilDe = (nom) => (SOCIAL && SOCIAL.profils && SOCIAL.profils[nom]) || {};
+  const photoValide = (src) => typeof src === "string" && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(src);
+  const avatar = (nom, opts) => {
+    opts = opts || {};
+    const photo = opts.photo !== undefined ? opts.photo : profilDe(nom).photo;
+    const cls = "avatar" + (opts.xl ? " avatar-xl" : "");
+    if (photoValide(photo)) return `<span class="${cls}"><img src="${photo}" alt=""></span>`;
     const teintes = ["#D4537E", "#378ADD", "#1D9E75", "#BA7517", "#7F77DD", "#D85A30"];
     const c = teintes[parseInt(hash(nom || "?"), 36) % teintes.length];
-    return `<span class="avatar" style="background:${c}">${esc((nom || "?").trim().charAt(0).toUpperCase())}</span>`;
+    return `<span class="${cls}" style="background:${c}">${esc((nom || "?").trim().charAt(0).toUpperCase())}</span>`;
   };
+  // Amis connectés en ce moment (affichés sur l'accueil).
+  function enLigneMaintenant() {
+    const amis = (SOCIAL && SOCIAL.amis ? SOCIAL.amis : []).filter((a) => profilDe(a.nom).enLigne);
+    if (!amis.length) return "";
+    return `<section class="post en-ligne-maintenant"><div class="small muted">En ligne maintenant</div>
+      <div class="row" style="flex-wrap:wrap;gap:12px;margin-top:6px">${amis.map((a) => `<span class="row" style="gap:6px">${avatar(a.nom)}<span>${nomEnLigne(a.nom)}</span></span>`).join("")}</div></section>`;
+  }
+  const avatarMoi = (xl) => avatar(P.prenom, { photo: P.photo || "", xl });
+  // Petit rond vert à côté du prénom quand la personne est en ligne (app ouverte depuis moins de 3 min).
+  const pointVert = (nom) => (profilDe(nom).enLigne ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : "");
+  const nomEnLigne = (nom) => `${esc(nom)}${pointVert(nom)}`;
   function lancerDefi(id) {
     const d = SOCIAL && SOCIAL.recus.find((x) => x.id === id);
     if (!d) { toast("Défi introuvable"); return; }
@@ -1271,7 +1296,7 @@
     m.innerHTML = `<form class="sheet stack" data-form="defier">
       <div class="row"><h2 style="margin:0">⚔️ Défier un ami</h2><span class="spacer"></span><button type="button" class="btn-ghost" data-action="fermer" aria-label="Fermer">✕</button></div>
       <p class="small muted" style="margin:0">Ton ami rejouera exactement les mêmes ${quiz.questions.length} questions. Il doit battre ton ${quiz.bons}/${quiz.questions.length}.</p>
-      ${amis.length ? amis.map((a) => `<label class="ami-choix">${avatar(a.nom)}<span style="flex:1">${esc(a.nom)}</span><input type="checkbox" name="ami" value="${esc(a.id)}"></label>`).join("")
+      ${amis.length ? amis.map((a) => `<label class="ami-choix">${avatar(a.nom)}<span style="flex:1">${nomEnLigne(a.nom)}</span><input type="checkbox" name="ami" value="${esc(a.id)}"></label>`).join("")
         : `<p class="muted">Personne d'autre n'est encore invité. Invite tes amis avec le bouton 🔗 Partager de l'accueil.</p>`}
       ${amis.length ? `<button class="btn-primary btn-big">Envoyer le défi 🔥</button>` : ""}
     </form>`;
@@ -1314,6 +1339,26 @@
     m.hidden = false;
   }
   function fermerModale() { const m = document.getElementById("modal"); m.hidden = true; m.innerHTML = ""; }
+
+  // Photo de profil : recadrée en carré au centre, réduite à 160 × 160 px, JPEG de moins de 40 000 caractères.
+  async function traiterPhoto(fichier) {
+    try {
+      const url = URL.createObjectURL(fichier);
+      const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error("Image illisible")); i.src = url; });
+      const c = document.createElement("canvas");
+      c.width = c.height = 160;
+      const cote = Math.min(img.naturalWidth, img.naturalHeight);
+      c.getContext("2d").drawImage(img, (img.naturalWidth - cote) / 2, (img.naturalHeight - cote) / 2, cote, cote, 0, 0, 160, 160);
+      URL.revokeObjectURL(url);
+      let q = 0.82, data = c.toDataURL("image/jpeg", q);
+      while (data.length > 40000 && q > 0.3) { q -= 0.15; data = c.toDataURL("image/jpeg", q); }
+      toast("Envoi de ta photo…", 10000);
+      await envoyer({ action: "photo", image: data });
+      P.photo = data; save();
+      toast("📷 Photo de profil mise à jour");
+      render(); chargerSocial();
+    } catch (e) { toast("❌ " + (e && e.message ? e.message : "Photo illisible"), 5000); }
+  }
 
   // ───────────────────────── Vérification des réponses par Claude ─────────────────────────
   // Fenêtre de choix : résout la promesse avec la valeur du bouton touché (null si on ferme).
@@ -1454,6 +1499,11 @@
       const depuisParent = vue.nom === "parent";
       demarrer(() => { toast("Données rechargées ✅"); aller(depuisParent ? "parent" : "accueil", { ok: true, onglet: "reglages" }); });
     }
+    else if (a === "retirer-photo") {
+      envoyer({ action: "photo", image: "" })
+        .then(() => { P.photo = ""; save(); toast("Photo retirée"); render(); chargerSocial(); })
+        .catch((e) => toast("❌ " + e.message, 5000));
+    }
     else if (a === "choix") { const r = resoudreChoix; resoudreChoix = null; if (r) r(el.dataset.val); }
     else if (a === "regles-ok") {
       const c = document.getElementById("regles-masquer");
@@ -1489,7 +1539,8 @@
     else if (a === "inv") {
       const op = el.dataset.op, nom = el.dataset.nom;
       const q = { revoquer: `Désactiver l'accès de ${nom} ? L'app ne s'ouvrira plus sur son appareil.`,
-        liberer: `${nom} a changé d'appareil ? Son lien pourra être utilisé une fois sur un nouvel appareil (l'ancien perd l'accès).` }[op];
+        liberer: `${nom} a changé d'appareil ? Son lien pourra être utilisé une fois sur un nouvel appareil (l'ancien perd l'accès).`,
+        retirerPhoto: `Retirer la photo de profil de ${nom} ?` }[op];
       if (q && !confirm(q)) return;
       el.disabled = true;
       envoyer({ action: op, cible: el.dataset.code })
@@ -1541,6 +1592,7 @@
       const themes = [...new Set(D.quiz.filter((q) => q.matiere === el.value).map((q) => q.theme).concat(D.fiches.filter((f) => f.matiere === el.value).map((f) => f.theme)))].filter(Boolean);
       el.form.querySelector("#themes").innerHTML = themes.map((t) => `<option value="${esc(t)}">`).join("");
     }
+    if (el.dataset.action === "photo" && el.files[0]) { traiterPhoto(el.files[0]); el.value = ""; }
     if (el.dataset.action === "importer" && el.files[0]) {
       el.files[0].text().then((t) => {
         const data = JSON.parse(t);
@@ -1676,6 +1728,10 @@
 
   demarrer();
   // Fil et notifications rafraîchis toutes les 2 minutes (jamais pendant une partie) et au retour dans l'app.
-  setInterval(() => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); }, 120000);
+  setInterval(() => {
+    if (document.hidden) return;
+    if (vue.nom !== "quiz") chargerSocial();
+    else if (peutDefier()) envoyer({ action: "presence" }).catch(() => {});
+  }, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); });
 })();

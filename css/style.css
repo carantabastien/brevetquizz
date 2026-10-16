@@ -258,3 +258,9 @@ td.num, th.num { text-align: right; }
 .list-btn { border: 0; border-radius: 10px; background: none; }
 .post.liste .list-btn + .list-btn { border-top: 1px solid var(--line); border-radius: 0; }
 .partage-card { display: flex; align-items: center; gap: 12px; }
+
+/* Photos de profil et présence */
+.avatar { overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.point-vert { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 2px var(--card); margin-left: 6px; vertical-align: middle; }
+.en-ligne-maintenant { padding: 10px 14px; }

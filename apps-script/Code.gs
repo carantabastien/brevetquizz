@@ -23,7 +23,7 @@ const ONGLETS = {
   Quiz: ['Matière', 'Thème', 'Question', 'Bonne réponse', 'Mauvaise réponse 1', 'Mauvaise réponse 2', 'Mauvaise réponse 3', 'Explication'],
   Fiches: ['Matière', 'Thème', 'Fiche', 'Point à retenir'],
   Frise: ['Thème', 'Année', 'Événement'],
-  'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut', 'Invité par'],
+  'Accès': ['Code', 'Nom', 'Appareil', 'Créé le', 'Activé le', 'Dernière visite', 'Statut', 'Invité par', 'Photo'],
   'Résultats': ['Code', 'Nom', 'Prénom saisi', 'Dernière activité', 'XP', 'Niveau', 'Parties', 'Réponses', 'Réussite',
     'Série (jours)', 'Erreurs à revoir', 'Badges', 'Fiches maîtrisées', 'Détail par matière'],
   'Historique': ['Date', 'Code', 'Nom', 'Matières', 'Bonnes réponses', 'Questions', 'Réussite'],
@@ -33,7 +33,10 @@ const ONGLETS = {
 // Colonnes de l'onglet Défis (base 0)
 const DF = { id: 0, date: 1, de: 2, pour: 3, matieres: 4, questions: 5, bons: 6, total: 7, statut: 8, score: 9, dateRep: 10 };
 // Colonnes de l'onglet Accès (base 0)
-const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6, par: 7 };
+const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6, par: 7, photo: 8 };
+// « En ligne » = l'app a donné signe de vie depuis moins de 3 minutes.
+const EN_LIGNE_MS = 3 * 60 * 1000;
+const enLigne_ = function (visite) { const t = temps_(visite); return !!t && Date.now() - t < EN_LIGNE_MS; };
 
 /** À exécuter une fois : crée les onglets manquants et met les colonnes de texte au format « texte brut ». */
 function installer() {
@@ -114,7 +117,16 @@ function doPost(e) {
       case 'liberer': // l'invité a changé de téléphone : son lien pourra être réutilisé une fois sur un nouvel appareil
         if (!moi && !parent) return refusAucune();
         return changer(function (l) { l[A.appareil] = ''; l[A.active] = ''; l[A.statut] = 'actif'; });
+      case 'retirerPhoto': // sa propre invitation, une de celles qu'on a créées, ou toutes avec la clé
+        if (!moi && !parent) return refusAucune();
+        return changer(function (l) { l[A.photo] = ''; });
       // Réservé aux joueurs (il faut un profil)
+      case 'presence': // signe de vie envoyé chaque minute : la vérification du code met à jour « Dernière visite »
+        if (!moi) return refusAucune();
+        return json_({ ok: true });
+      case 'photo':
+        if (!moi) return refusAucune();
+        return json_(enregistrerPhoto_(ss, moi, req.image));
       case 'defier':
         if (!moi) return refusAucune();
         return json_(defier_(ss, moi, req));
@@ -174,7 +186,7 @@ function verifierInvitation_(ss, code, appareil) {
     } else if (l[A.appareil] !== String(appareil)) {
       return 'deja_utilisee';
     }
-    sh.getRange(i + 1, A.visite + 1).setValue(maintenant);
+    sh.getRange(i + 1, A.visite + 1).setNumberFormat('@').setValue(maintenant);
     return null;
   }
   return 'inconnue';
@@ -185,7 +197,7 @@ function creerInvitation_(ss, nom, par) {
   if (!nom) throw new Error('Indique le prénom de la personne invitée');
   const code = Utilities.getUuid().replace(/-/g, '').slice(0, 16);
   const sh = ss.getSheetByName('Accès');
-  sh.getRange(sh.getLastRow() + 1, 1, 1, 8).setNumberFormat('@').setValues([[code, nom, '', horodatage_(), '', '', 'actif', par || '']]);
+  sh.getRange(sh.getLastRow() + 1, 1, 1, 9).setNumberFormat('@').setValues([[code, nom, '', horodatage_(), '', '', 'actif', par || '', '']]);
   return { ok: true, code: code, nom: nom };
 }
 
@@ -198,7 +210,7 @@ function listerInvitations_(ss, par) {
     .filter(function (l) { return par === null || l[A.par] === par; })
     .map(function (l) {
       return { code: l[A.code], nom: l[A.nom], utilise: !!l[A.appareil], cree: l[A.cree], active: l[A.active], visite: l[A.visite], statut: l[A.statut],
-        par: l[A.par] ? (noms[l[A.par]] || '') : '' };
+        par: l[A.par] ? (noms[l[A.par]] || '') : '', photo: !!l[A.photo], enLigne: enLigne_(l[A.visite]) };
     });
 }
 
@@ -209,10 +221,10 @@ function modifierInvitation_(ss, code, modif, par) {
   for (let i = 1; i < valeurs.length; i++) {
     if (valeurs[i][A.code] !== String(code)) continue;
     if (par !== null && valeurs[i][A.par] !== par) return { ok: false, erreur: "Tu ne peux gérer que les invitations que tu as créées" };
-    const l = valeurs[i].slice(0, 8);
-    while (l.length < 8) l.push('');
+    const l = valeurs[i].slice(0, 9);
+    while (l.length < 9) l.push('');
     modif(l);
-    sh.getRange(i + 1, 1, 1, 8).setNumberFormat('@').setValues([l]);
+    sh.getRange(i + 1, 1, 1, 9).setNumberFormat('@').setValues([l]);
     return { ok: true };
   }
   return { ok: false, erreur: 'Invitation introuvable' };
@@ -326,7 +338,7 @@ function temps_(s) {
 function membres_(ss) {
   const membres = {};
   ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
-    if (l[A.code] && l[A.statut] === 'actif') membres[l[A.code]] = { id: idPublic_(l[A.code]), nom: l[A.nom] };
+    if (l[A.code] && l[A.statut] === 'actif') membres[l[A.code]] = { id: idPublic_(l[A.code]), nom: l[A.nom], photo: l[A.photo] || '', enLigne: enLigne_(l[A.visite]) };
   });
   return membres;
 }
@@ -374,8 +386,12 @@ function social_(ss, moi) {
 
   fil.sort(function (a, b) { return b.t - a.t; });
   notifs.sort(function (a, b) { return b.t - a.t; });
+  const profils = {};
+  Object.keys(membres).forEach(function (c) { profils[membres[c].nom] = { photo: membres[c].photo, enLigne: membres[c].enLigne }; });
   return {
     ok: true,
+    profils: profils,
+    moi: moi && membres[moi] ? { nom: membres[moi].nom, photo: membres[moi].photo } : null,
     amis: Object.keys(membres).filter(function (c) { return c !== moi; }).map(function (c) { return membres[c]; }),
     fil: fil.slice(0, 40), recus: recus, envoyes: envoyes, notifs: notifs.slice(0, 40)
   };
@@ -425,15 +441,23 @@ function bravo_(ss, moi, partie) {
 
 /** Élèves dont l'invitation est active, avec leur réussite. « moi » repère la ligne de l'élève qui demande. */
 function classement_(ss, moi) {
-  const actifs = {};
-  ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
-    if (l[A.code] && l[A.statut] === 'actif') actifs[l[A.code]] = l[A.nom];
-  });
+  const membres = membres_(ss);
   return ss.getSheetByName('Résultats').getDataRange().getDisplayValues().slice(1)
-    .filter(function (l) { return l[0] && actifs.hasOwnProperty(l[0]); })
+    .filter(function (l) { return l[0] && membres.hasOwnProperty(l[0]); })
     .map(function (l) {
-      return { nom: actifs[l[0]] || l[1], reussite: parseInt(l[8], 10) || 0, repondues: +l[7] || 0, parties: +l[6] || 0, moi: l[0] === moi };
+      const m = membres[l[0]];
+      return { nom: m.nom || l[1], reussite: parseInt(l[8], 10) || 0, repondues: +l[7] || 0, parties: +l[6] || 0, moi: l[0] === moi,
+        photo: m.photo, enLigne: m.enLigne };
     });
+}
+
+/** Photo de profil : petite image JPEG en data URL (l'app la réduit à 160 × 160 px). Vide = retirer la photo. */
+function enregistrerPhoto_(ss, moi, image) {
+  image = String(image || '');
+  if (image && (!/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(image) || image.length > 45000)) {
+    return { ok: false, erreur: 'Image refusée : elle doit être une photo JPEG de petite taille.' };
+  }
+  return modifierInvitation_(ss, moi, function (l) { l[A.photo] = image; }, null);
 }
 
 function lireResultats_(ss) {

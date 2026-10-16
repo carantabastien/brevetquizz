@@ -72,6 +72,8 @@ Une fois l'URL du script inscrite dans `js/config.js` (`scriptUrl`), l'app passe
 
 **🏆 Classement** (bouton de l'accueil, visible par tous les invités) : élèves classés par taux de bonnes réponses, à partir de 20 réponses. Un élève qui en a moins apparaît dans « Pas encore classés ». Chacun ne voit des autres que le prénom de l'invitation, le pourcentage et le nombre de réponses. Une invitation désactivée sort du classement.
 
+**🟢 En ligne et 📷 photos de profil** : un petit rond vert apparaît à côté du prénom des amis qui ont l'app ouverte (moins de 3 minutes), avec un bandeau « En ligne maintenant » sur l'accueil. Chacun peut mettre une photo de profil (Profil > 📷 Ajouter une photo), recadrée et réduite automatiquement. On peut retirer la photo des personnes qu'on a invitées, et toutes avec la clé.
+
 **Style « Social »** : l'accueil ressemble à un réseau social. En haut, les matières en « stories » : une touche lance une partie, et l'anneau devient gris quand toutes les questions ont été vues. En dessous, le fil d'activité des amis. En bas, une barre de navigation avec le bouton ＋ pour une partie mélangée.
 
 **⚔️ Défis entre amis** : à la fin d'une partie, « Défier un ami avec ce score ». L'ami rejoue exactement les mêmes questions. Le défi lui arrive dans la 🔔 cloche de l'app (rafraîchie à l'ouverture et toutes les 2 minutes), et le bouton « Prévenir par message » permet de l'avertir tout de suite par WhatsApp ou SMS. Une fois le défi relevé, chacun voit le duel. On peut aussi dire ❤️ « Bravo » sur les parties des amis.
