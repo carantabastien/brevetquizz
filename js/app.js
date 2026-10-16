@@ -672,7 +672,7 @@
           <div class="card">
             ${classes.length ? classes.map((x) => `<div class="cl-row ${x.moi ? "cl-moi" : ""}">
                 <div class="cl-rang">${medaille(x.rang)}</div>
-                <div class="cl-nom"><strong>${esc(x.nom)}</strong>${x.enLigne ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : ""}${x.moi ? ` <span class="tag">toi</span>` : ""}<div class="small muted">${x.repondues} réponses · ${x.parties} parties</div></div>
+                <div class="cl-nom"><strong>${esc(x.nom)}</strong>${(EN_LIGNE ? EN_LIGNE.has(x.nom) : x.enLigne) ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : ""}${x.moi ? ` <span class="tag">toi</span>` : ""}<div class="small muted">${x.repondues} réponses · ${x.parties} parties</div></div>
                 <div class="cl-val">${x.reussite} %</div>
               </div>`).join("")
             : `<p class="muted center">Personne n'est encore classé. Le premier à ${MIN} réponses prend la tête ! 🚀</p>`}
@@ -923,7 +923,7 @@
         <div class="card" style="margin-top:12px"><h3>Invitations</h3>
           ${!invs ? `<p class="muted">Chargement…</p>` : !invs.length ? `<p class="muted">Aucune invitation pour l'instant.</p>`
           : `<table><thead><tr><th>Personne</th><th>État</th><th></th></tr></thead><tbody>
-            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong>${i.enLigne ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : ""}<div class="small muted">créée le ${esc(i.cree)}${P.cle && i.par ? ` · par ${esc(i.par)}` : ""}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
+            ${invs.slice().reverse().map((i) => `<tr><td><strong>${esc(i.nom)}</strong>${(EN_LIGNE ? EN_LIGNE.has(i.nom) : i.enLigne) ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : ""}<div class="small muted">créée le ${esc(i.cree)}${P.cle && i.par ? ` · par ${esc(i.par)}` : ""}</div></td><td>${etat(i)}</td><td class="num">${actions(i)}</td></tr>`).join("")}
             </tbody></table>`}
         </div>`;
     },
@@ -1258,15 +1258,18 @@
     return `<span class="${cls}" style="background:${c}">${esc((nom || "?").trim().charAt(0).toUpperCase())}</span>`;
   };
   // Amis connectés en ce moment (affichés sur l'accueil).
+  // Prénoms des personnes en ligne, rafraîchis toutes les 5 s (null tant que la première réponse n'est pas arrivée).
+  let EN_LIGNE = null;
+  const estEnLigne = (nom) => (EN_LIGNE ? EN_LIGNE.has(nom) : !!profilDe(nom).enLigne);
   function enLigneMaintenant() {
-    const amis = (SOCIAL && SOCIAL.amis ? SOCIAL.amis : []).filter((a) => profilDe(a.nom).enLigne);
+    const amis = (SOCIAL && SOCIAL.amis ? SOCIAL.amis : []).filter((a) => estEnLigne(a.nom));
     if (!amis.length) return "";
     return `<section class="post en-ligne-maintenant"><div class="small muted">En ligne maintenant</div>
       <div class="row" style="flex-wrap:wrap;gap:12px;margin-top:6px">${amis.map((a) => `<span class="row" style="gap:6px">${avatar(a.nom)}<span>${nomEnLigne(a.nom)}</span></span>`).join("")}</div></section>`;
   }
   const avatarMoi = (xl) => avatar(P.prenom, { photo: P.photo || "", xl });
   // Petit rond vert à côté du prénom quand la personne est en ligne (app ouverte depuis moins de 3 min).
-  const pointVert = (nom) => (profilDe(nom).enLigne ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : "");
+  const pointVert = (nom) => (estEnLigne(nom) ? `<span class="point-vert" role="img" aria-label="en ligne" title="En ligne"></span>` : "");
   const nomEnLigne = (nom) => `${esc(nom)}${pointVert(nom)}`;
   function lancerDefi(id) {
     const d = SOCIAL && SOCIAL.recus.find((x) => x.id === id);
@@ -1728,10 +1731,31 @@
 
   demarrer();
   // Fil et notifications rafraîchis toutes les 2 minutes (jamais pendant une partie) et au retour dans l'app.
-  setInterval(() => {
-    if (document.hidden) return;
-    if (vue.nom !== "quiz") chargerSocial();
-    else if (peutDefier()) envoyer({ action: "presence" }).catch(() => {});
-  }, 60000);
+  setInterval(() => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); }, 60000);
+
+  // Présence en direct : signe de vie toutes les 5 s quand l'app est visible (même pendant une partie).
+  // La réponse donne les prénoms des personnes en ligne ; on redessine seulement les vues sans formulaire.
+  let presenceEnCours = false;
+  function signeDeVie() {
+    if (document.hidden || presenceEnCours || !scriptUrl() || !(ACCES.code || P.cle)) return;
+    presenceEnCours = true;
+    envoyer({ action: "presence" })
+      .then((r) => {
+        const avant = EN_LIGNE ? [...EN_LIGNE].sort().join("|") : null;
+        EN_LIGNE = new Set(r.enLigne || []);
+        if ([...EN_LIGNE].sort().join("|") !== avant && ["accueil", "classement", "profil", "notifs"].includes(vue.nom)) render();
+      })
+      .catch(() => { /* hors ligne : on réessaiera */ })
+      .finally(() => { presenceEnCours = false; });
+  }
+  setInterval(signeDeVie, 5000);
+  signeDeVie();
+  // En quittant l'app (autre appli, écran verrouillé), on prévient tout de suite : le rond vert disparaît.
+  function signalerDepart() {
+    if (!scriptUrl() || !ACCES.code || !navigator.sendBeacon) return;
+    try { navigator.sendBeacon(scriptUrl(), JSON.stringify({ action: "absent", code: ACCES.code, appareil: ACCES.appareil, cle: P.cle })); } catch (e) { /* rien */ }
+  }
+  document.addEventListener("visibilitychange", () => (document.hidden ? signalerDepart() : signeDeVie()));
+  window.addEventListener("pagehide", signalerDepart);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && vue.nom !== "quiz") chargerSocial(); });
 })();

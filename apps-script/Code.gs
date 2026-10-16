@@ -34,9 +34,36 @@ const ONGLETS = {
 const DF = { id: 0, date: 1, de: 2, pour: 3, matieres: 4, questions: 5, bons: 6, total: 7, statut: 8, score: 9, dateRep: 10 };
 // Colonnes de l'onglet Accès (base 0)
 const A = { code: 0, nom: 1, appareil: 2, cree: 3, active: 4, visite: 5, statut: 6, par: 7, photo: 8 };
-// « En ligne » = l'app a donné signe de vie depuis moins de 3 minutes.
-const EN_LIGNE_MS = 3 * 60 * 1000;
-const enLigne_ = function (visite) { const t = temps_(visite); return !!t && Date.now() - t < EN_LIGNE_MS; };
+// Présence en direct : chaque app envoie un signe de vie toutes les 5 s ; il est gardé dans le cache du script
+// (rapide, sans écrire dans le Sheet). « En ligne » = signe de vie reçu il y a moins de 12 s.
+const EN_LIGNE_MS = 12 * 1000;
+/** Codes (parmi ceux donnés) dont l'app est ouverte en ce moment. */
+function codesEnLigne_(codes) {
+  if (!codes.length) return {};
+  const vus = CacheService.getScriptCache().getAll(codes.map(function (c) { return 'vu_' + c; }));
+  const maintenant = Date.now(), res = {};
+  codes.forEach(function (c) { const t = Number(vus['vu_' + c] || 0); if (t && maintenant - t < EN_LIGNE_MS) res[c] = true; });
+  return res;
+}
+/** Signe de vie (ou départ) d'un joueur ; renvoie les prénoms des personnes en ligne. Sans verrou ni écriture dans le Sheet. */
+function presence_(ss, req, parent, absent) {
+  const cache = CacheService.getScriptCache();
+  let membres = null;
+  try { membres = JSON.parse(cache.get('membres_presence') || 'null'); } catch (e) { membres = null; }
+  if (!membres) {
+    membres = {};
+    ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
+      if (l[A.code] && l[A.statut] === 'actif') membres[l[A.code]] = { nom: l[A.nom], appareil: l[A.appareil] };
+    });
+    cache.put('membres_presence', JSON.stringify(membres), 30);
+  }
+  const moi = String(req.code || ''), m = membres[moi];
+  const reconnu = !!m && !!m.appareil && m.appareil === String(req.appareil || '');
+  if (!reconnu && !parent) return { ok: false, code: 'aucune', erreur: MESSAGES.aucune };
+  if (reconnu) { if (absent) cache.remove('vu_' + moi); else cache.put('vu_' + moi, String(Date.now()), 60); }
+  const enLigne = codesEnLigne_(Object.keys(membres));
+  return { ok: true, enLigne: Object.keys(enLigne).map(function (c) { return membres[c].nom; }) };
+}
 
 /** À exécuter une fois : crée les onglets manquants et met les colonnes de texte au format « texte brut ». */
 function installer() {
@@ -67,6 +94,12 @@ function doPost(e) {
   let req;
   try { req = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, erreur: 'Requête illisible' }); }
   const parent = req.cle === CLE_SECRETE;
+
+  // Présence en direct (toutes les 5 s) : hors du verrou, sans écriture dans le Sheet.
+  if (req.action === 'presence' || req.action === 'absent') {
+    try { return json_(presence_(SpreadsheetApp.getActiveSpreadsheet(), req, parent, req.action === 'absent')); }
+    catch (err) { return json_({ ok: false, erreur: String(err) }); }
+  }
 
   // Vérification des réponses par Claude : hors du verrou (appel long), réservée au détenteur de la clé.
   if (req.action === 'verifier') {
@@ -121,9 +154,6 @@ function doPost(e) {
         if (!moi && !parent) return refusAucune();
         return changer(function (l) { l[A.photo] = ''; });
       // Réservé aux joueurs (il faut un profil)
-      case 'presence': // signe de vie envoyé chaque minute : la vérification du code met à jour « Dernière visite »
-        if (!moi) return refusAucune();
-        return json_({ ok: true });
       case 'photo':
         if (!moi) return refusAucune();
         return json_(enregistrerPhoto_(ss, moi, req.image));
@@ -183,6 +213,7 @@ function verifierInvitation_(ss, code, appareil) {
     if (!l[A.appareil]) {
       sh.getRange(i + 1, A.appareil + 1).setValue(String(appareil));
       sh.getRange(i + 1, A.active + 1).setValue(maintenant);
+      CacheService.getScriptCache().remove('membres_presence');
     } else if (l[A.appareil] !== String(appareil)) {
       return 'deja_utilisee';
     }
@@ -198,6 +229,7 @@ function creerInvitation_(ss, nom, par) {
   const code = Utilities.getUuid().replace(/-/g, '').slice(0, 16);
   const sh = ss.getSheetByName('Accès');
   sh.getRange(sh.getLastRow() + 1, 1, 1, 9).setNumberFormat('@').setValues([[code, nom, '', horodatage_(), '', '', 'actif', par || '', '']]);
+  CacheService.getScriptCache().remove('membres_presence');
   return { ok: true, code: code, nom: nom };
 }
 
@@ -206,11 +238,12 @@ function listerInvitations_(ss, par) {
   const lignes = ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).filter(function (l) { return l[A.code]; });
   const noms = {};
   lignes.forEach(function (l) { noms[l[A.code]] = l[A.nom]; });
+  const enLigne = codesEnLigne_(lignes.map(function (l) { return l[A.code]; }));
   return lignes
     .filter(function (l) { return par === null || l[A.par] === par; })
     .map(function (l) {
       return { code: l[A.code], nom: l[A.nom], utilise: !!l[A.appareil], cree: l[A.cree], active: l[A.active], visite: l[A.visite], statut: l[A.statut],
-        par: l[A.par] ? (noms[l[A.par]] || '') : '', photo: !!l[A.photo], enLigne: enLigne_(l[A.visite]) };
+        par: l[A.par] ? (noms[l[A.par]] || '') : '', photo: !!l[A.photo], enLigne: !!enLigne[l[A.code]] };
     });
 }
 
@@ -224,6 +257,7 @@ function modifierInvitation_(ss, code, modif, par) {
     const l = valeurs[i].slice(0, 9);
     while (l.length < 9) l.push('');
     modif(l);
+    CacheService.getScriptCache().remove('membres_presence');
     sh.getRange(i + 1, 1, 1, 9).setNumberFormat('@').setValues([l]);
     return { ok: true };
   }
@@ -338,8 +372,10 @@ function temps_(s) {
 function membres_(ss) {
   const membres = {};
   ss.getSheetByName('Accès').getDataRange().getDisplayValues().slice(1).forEach(function (l) {
-    if (l[A.code] && l[A.statut] === 'actif') membres[l[A.code]] = { id: idPublic_(l[A.code]), nom: l[A.nom], photo: l[A.photo] || '', enLigne: enLigne_(l[A.visite]) };
+    if (l[A.code] && l[A.statut] === 'actif') membres[l[A.code]] = { id: idPublic_(l[A.code]), nom: l[A.nom], photo: l[A.photo] || '', enLigne: false };
   });
+  const enLigne = codesEnLigne_(Object.keys(membres));
+  Object.keys(enLigne).forEach(function (c) { membres[c].enLigne = true; });
   return membres;
 }
 
